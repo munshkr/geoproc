@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "eoengine"
+version = "0.1.0"
+description = "An extensible open source Earth Observation engine"
+authors = ["Damián Silvani <munshkr@gmail.com>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
