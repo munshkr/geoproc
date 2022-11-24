@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "eoengine"
+name = "eotoolkit"
 version = "0.1.0"
-description = "An extensible open source Earth Observation engine"
+description = "An extensible open source Earth Observation toolkit"
 authors = ["Damián Silvani <munshkr@gmail.com>"]
 license = "Apache-2.0"
 
