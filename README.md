@@ -1,5 +1,3 @@
-![](header.jpg)
+# eotoolkit
 
-# eoengine
-
-An extensible open source Earth Observation engine
+An extensible open source Earth Observation toolkit
