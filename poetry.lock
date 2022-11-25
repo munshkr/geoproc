@@ -89,17 +89,6 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
-name = "charset-normalizer"
-version = "2.1.1"
-description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-category = "main"
-optional = false
-python-versions = ">=3.6.0"
-
-[package.extras]
-unicode_backport = ["unicodedata2"]
-
-[[package]]
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
@@ -139,14 +128,6 @@ click = ">=4.0"
 test = ["pytest-cov"]
 
 [[package]]
-name = "cloudpickle"
-version = "2.2.0"
-description = "Extended pickling support for Python objects"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "color-operations"
 version = "0.1.0"
 description = "Apply basic color-oriented image operations."
@@ -169,31 +150,6 @@ optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 
 [[package]]
-name = "dask"
-version = "2022.11.1"
-description = "Parallel PyData with Task Scheduling"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-click = ">=7.0"
-cloudpickle = ">=1.1.1"
-fsspec = ">=0.6.0"
-packaging = ">=20.0"
-partd = ">=0.3.10"
-pyyaml = ">=5.3.1"
-toolz = ">=0.8.2"
-
-[package.extras]
-array = ["numpy (>=1.18)"]
-complete = ["bokeh (>=2.4.2,<3)", "distributed (==2022.11.1)", "jinja2", "numpy (>=1.18)", "pandas (>=1.0)"]
-dataframe = ["numpy (>=1.18)", "pandas (>=1.0)"]
-diagnostics = ["bokeh (>=2.4.2,<3)", "jinja2"]
-distributed = ["distributed (==2022.11.1)"]
-test = ["pandas", "pytest", "pytest-rerunfailures", "pytest-xdist", "pre-commit"]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.0.4"
 description = "Backport of PEP 654 (exception groups)"
@@ -203,37 +159,6 @@ python-versions = ">=3.7"
 
 [package.extras]
 test = ["pytest (>=6)"]
-
-[[package]]
-name = "fsspec"
-version = "2022.11.0"
-description = "File-system specification"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.extras]
-abfs = ["adlfs"]
-adl = ["adlfs"]
-arrow = ["pyarrow (>=1)"]
-dask = ["dask", "distributed"]
-dropbox = ["dropboxdrivefs", "requests", "dropbox"]
-entrypoints = ["importlib-metadata"]
-fuse = ["fusepy"]
-gcs = ["gcsfs"]
-git = ["pygit2"]
-github = ["requests"]
-gs = ["gcsfs"]
-gui = ["panel"]
-hdfs = ["pyarrow (>=1)"]
-http = ["requests", "aiohttp (!=4.0.0a0,!=4.0.0a1)"]
-libarchive = ["libarchive-c"]
-oci = ["ocifs"]
-s3 = ["s3fs"]
-sftp = ["paramiko"]
-smb = ["smbprotocol"]
-ssh = ["paramiko"]
-tqdm = ["tqdm"]
 
 [[package]]
 name = "h11"
@@ -321,14 +246,6 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
-name = "locket"
-version = "1.0.0"
-description = "File-based locks for Python on Linux and Windows"
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
 name = "morecantile"
 version = "3.2.1"
 description = "Construct and use map tile grids (a.k.a TileMatrixSet / TMS)."
@@ -370,47 +287,12 @@ python-versions = ">=3.8"
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
 pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
-
-[[package]]
-name = "pandas"
-version = "1.5.2"
-description = "Powerful data structures for data analysis, time series, and statistics"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-numpy = [
-    {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\""},
-    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
-]
-python-dateutil = ">=2.8.1"
-pytz = ">=2020.1"
-
-[package.extras]
-test = ["hypothesis (>=5.5.3)", "pytest (>=6.0)", "pytest-xdist (>=1.31)"]
-
-[[package]]
-name = "partd"
-version = "1.3.0"
-description = "Appendable key-value storage"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-locket = "*"
-toolz = "*"
-
-[package.extras]
-complete = ["numpy (>=1.9.0)", "pandas (>=0.19.0)", "pyzmq", "blosc"]
 
 [[package]]
 name = "pluggy"
@@ -477,22 +359,6 @@ orjson = ["orjson (>=3.5)"]
 validation = ["jsonschema (>=4.0.1)"]
 
 [[package]]
-name = "pystac-client"
-version = "0.5.1"
-description = "Python library for working with Spatiotemporal Asset Catalog (STAC)."
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-pystac = ">=1.4.0"
-python-dateutil = ">=2.7.0"
-requests = ">=2.27.1"
-
-[package.extras]
-validation = ["jsonschema (>=4.5.1)"]
-
-[[package]]
 name = "pytest"
 version = "7.2.0"
 description = "pytest: simple powerful testing with Python"
@@ -524,22 +390,6 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 six = ">=1.5"
 
 [[package]]
-name = "pytz"
-version = "2022.6"
-description = "World timezone definitions, modern and historical"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "pyyaml"
-version = "6.0"
-description = "YAML parser and emitter for Python"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "rasterio"
 version = "1.3.4"
 description = "Fast and direct raster I/O for use with Numpy and SciPy"
@@ -564,24 +414,6 @@ ipython = ["ipython (>=2.0)"]
 plot = ["matplotlib"]
 s3 = ["boto3 (>=1.2.4)"]
 test = ["boto3 (>=1.2.4)", "hypothesis", "packaging", "pytest-cov (>=2.2.0)", "pytest (>=2.8.2)", "shapely"]
-
-[[package]]
-name = "requests"
-version = "2.28.1"
-description = "Python HTTP for Humans."
-category = "main"
-optional = false
-python-versions = ">=3.7, <4"
-
-[package.dependencies]
-certifi = ">=2017.4.17"
-charset-normalizer = ">=2,<3"
-idna = ">=2.5,<4"
-urllib3 = ">=1.21.1,<1.27"
-
-[package.extras]
-socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "rfc3986"
@@ -624,27 +456,6 @@ dev = ["pre-commit"]
 docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "nbconvert", "pygments"]
 test = ["pytest", "pytest-asyncio", "pytest-benchmark", "pytest-cov", "rioxarray", "xarray"]
 xarray = ["rioxarray", "xarray"]
-
-[[package]]
-name = "rioxarray"
-version = "0.13.1"
-description = "geospatial xarray extension powered by rasterio"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-packaging = "*"
-pyproj = ">=2.2"
-rasterio = ">=1.1.1"
-xarray = ">=0.17"
-
-[package.extras]
-all = ["scipy", "sphinx-click", "nbsphinx", "sphinx-rtd-theme", "pytest (>=3.6)", "pytest-cov", "pytest-timeout", "dask", "netcdf4", "pylint", "mypy", "pre-commit"]
-dev = ["scipy", "sphinx-click", "nbsphinx", "sphinx-rtd-theme", "pytest (>=3.6)", "pytest-cov", "pytest-timeout", "dask", "netcdf4", "pylint", "mypy", "pre-commit"]
-doc = ["sphinx-click", "nbsphinx", "sphinx-rtd-theme"]
-interp = ["scipy"]
-test = ["pytest (>=3.6)", "pytest-cov", "pytest-timeout", "dask", "netcdf4"]
 
 [[package]]
 name = "s3transfer"
@@ -700,14 +511,6 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
-name = "toolz"
-version = "0.12.0"
-description = "List processing tools and functional utilities"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[[package]]
 name = "typing-extensions"
 version = "4.4.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -729,27 +532,6 @@ secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "cer
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
-name = "xarray"
-version = "2022.11.0"
-description = "N-D labeled arrays and datasets in Python"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-numpy = ">=1.20"
-packaging = ">=21.0"
-pandas = ">=1.3"
-
-[package.extras]
-accel = ["scipy", "bottleneck", "numbagg", "flox"]
-complete = ["netcdf4", "h5netcdf", "scipy", "zarr", "fsspec", "cftime", "rasterio", "cfgrib", "pooch", "bottleneck", "numbagg", "flox", "dask", "matplotlib", "seaborn", "nc-time-axis", "pydap"]
-docs = ["netcdf4", "h5netcdf", "scipy", "zarr", "fsspec", "cftime", "rasterio", "cfgrib", "pooch", "bottleneck", "numbagg", "flox", "dask", "matplotlib", "seaborn", "nc-time-axis", "sphinx-autosummary-accessors", "sphinx-rtd-theme", "ipython", "ipykernel", "jupyter-client", "nbsphinx", "scanpydoc", "pydap"]
-io = ["netcdf4", "h5netcdf", "scipy", "zarr", "fsspec", "cftime", "rasterio", "cfgrib", "pooch", "pydap"]
-parallel = ["dask"]
-viz = ["matplotlib", "seaborn", "nc-time-axis"]
-
-[[package]]
 name = "zipp"
 version = "3.10.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
@@ -764,7 +546,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "715f82c0236348c058be47c225b0e318aae3961d828b80b931800c640b0b1fa1"
+content-hash = "4612028327e5e5a9f47d632ec55b311d433f557d3ffcb6b4ad637adca0ab3af0"
 
 [metadata.files]
 affine = []
@@ -774,16 +556,12 @@ boto3 = []
 botocore = []
 cachetools = []
 certifi = []
-charset-normalizer = []
 click = []
 click-plugins = []
 cligj = []
-cloudpickle = []
 color-operations = []
 colorama = []
-dask = []
 exceptiongroup = []
-fsspec = []
 h11 = []
 httpcore = []
 httpx = []
@@ -791,35 +569,25 @@ idna = []
 importlib-resources = []
 iniconfig = []
 jmespath = []
-locket = []
 morecantile = []
 numexpr = []
 numpy = []
 packaging = []
-pandas = []
-partd = []
 pluggy = []
 pydantic = []
 pyparsing = []
 pyproj = []
 pystac = []
-pystac-client = []
 pytest = []
 python-dateutil = []
-pytz = []
-pyyaml = []
 rasterio = []
-requests = []
 rfc3986 = []
 rio-tiler = []
-rioxarray = []
 s3transfer = []
 six = []
 sniffio = []
 snuggs = []
 tomli = []
-toolz = []
 typing-extensions = []
 urllib3 = []
-xarray = []
 zipp = []
