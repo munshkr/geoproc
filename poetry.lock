@@ -564,6 +564,26 @@ idna = {version = "*", optional = true, markers = "extra == \"idna2008\""}
 idna2008 = ["idna"]
 
 [[package]]
+name = "rio-cogeo"
+version = "3.5.0"
+description = "Cloud Optimized GeoTIFF (COGEO) creation plugin for rasterio"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+click = ">=7.0"
+morecantile = ">=3.1,<4.0"
+numpy = ">=1.15,<2.0"
+pydantic = "*"
+rasterio = ">=1.3.3"
+
+[package.extras]
+dev = ["pre-commit"]
+docs = ["mkdocs", "mkdocs-material"]
+test = ["pytest", "pytest-cov", "cogdumper"]
+
+[[package]]
 name = "rio-tiler"
 version = "4.1.0"
 description = "User friendly Rasterio plugin to read raster datasets."
@@ -604,6 +624,19 @@ botocore = ">=1.12.36,<2.0a.0"
 
 [package.extras]
 crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
+
+[[package]]
+name = "shapely"
+version = "1.8.5.post1"
+description = "Geometric objects, predicates, and operations"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+all = ["pytest", "pytest-cov", "numpy"]
+test = ["pytest", "pytest-cov"]
+vectorized = ["numpy"]
 
 [[package]]
 name = "six"
@@ -760,7 +793,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "dc6256a2139dd1d69aa6277fb71c2540c8f219b7873dfaf3c7bd7a8d69f0dafb"
+content-hash = "442b83e51aeabfcb3b68f70465ac221d4e42ac8f52c6d77519345deb105d7453"
 
 [metadata.files]
 affine = []
@@ -807,8 +840,10 @@ python-dotenv = []
 pyyaml = []
 rasterio = []
 rfc3986 = []
+rio-cogeo = []
 rio-tiler = []
 s3transfer = []
+shapely = []
 six = []
 sniffio = []
 snuggs = []
