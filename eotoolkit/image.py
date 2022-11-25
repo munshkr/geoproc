@@ -26,9 +26,16 @@ class Image:
         client = APIClient()
         self._map = client.get_map(self._graph)
 
-    def export(self, *, scale, path, bounds, crs="epsg:4326"):
+    def export(self, *, path, bounds, scale=1000, in_crs="epsg:4326", crs="epsg:4326"):
         client = APIClient()
-        return client.export(self, scale=scale, crs=crs, bounds=bounds, path=path)
+        return client.export(
+            self,
+            path=path,
+            bounds=bounds,
+            scale=scale,
+            in_crs=in_crs,
+            crs=crs,
+        )
 
     def abs(self):
         return Image({"name": "Image.abs", "args": [self._graph]})

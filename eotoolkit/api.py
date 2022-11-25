@@ -9,10 +9,11 @@ class APIClient:
         r = httpx.post(f"{self.url}/map", json=image.graph)
         return r.json()
 
-    def export(self, image, *, scale, crs, bounds, path):
+    def export(self, image, *, scale, in_crs, crs, bounds, path):
         data = {
             "image": image.graph,
             "scale": scale,
+            "in_crs": in_crs,
             "crs": crs,
             "bounds": bounds,
             "path": path,
