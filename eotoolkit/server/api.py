@@ -12,8 +12,67 @@ from pyproj import CRS, Transformer
 from rio_cogeo.profiles import cog_profiles
 from shapely.geometry import box
 from shapely.ops import transform
+from rasterio.enums import Resampling
 
 # from .image import Image
+
+
+def compute(
+    image: dict,
+    size: Tuple[int, int],
+    bounds: Tuple[float, float, float, float],
+    crs,
+) -> np.array:
+    w, h = size
+
+    fname = image["name"]
+    args = [
+        compute(arg, size=size, bounds=bounds, crs=crs)
+        if isinstance(arg, dict)
+        else arg
+        for arg in image["args"]
+    ]
+
+    if fname == "Image.constant":
+        value = args[0]
+        return np.ones((1, w, h), dtype=np.min_scalar_type(value)) * value
+    elif fname == "Image.load":
+        path = args[0]
+        with rasterio.open(path) as src:
+            bbox = box(*bounds)
+            project = Transformer.from_crs(crs, src.crs, always_xy=True).transform
+            repr_bbox = transform(project, bbox)
+            left, bottom, right, top = repr_bbox.bounds
+
+            window = rasterio.windows.from_bounds(
+                left,
+                bottom,
+                right,
+                top,
+                transform=src.transform,
+            )
+            return src.read(
+                out_shape=(1, w, h),
+                window=window,
+                resampling=Resampling.average,
+                indexes=[1],
+            )
+    elif fname == "Image.abs":
+        return np.abs(args[0])
+    elif fname == "Image.add":
+        return args[0] + args[1]
+    elif fname == "Image.sub":
+        return args[0] - args[1]
+    elif fname == "Image.mul":
+        return args[0] * args[1]
+    elif fname == "Image.truediv":
+        return args[0] / args[1]
+    elif fname == "Image.floordiv":
+        return args[0] // args[1]
+
+    raise NotImplementedError(
+        f"unknown method {image['name']} with args {image['args']}"
+    )
 
 
 class ExportRequest(BaseModel):
@@ -69,17 +128,14 @@ async def export(req: ExportRequest):
         top=maxy,
         transform=affine,
     )
-
-    # Get ceiling from width and height
-    width, height = math.ceil(window.width), math.ceil(window.height)
-
-    # Compute image using that resolution
-    # TODO: Compute image based on image computation graph
-    img = np.ones((1, width, height), dtype=np.uint8)
+    width, height = int(window.width), int(window.height)
 
     # Recalculate affine transformation for output file (in output CRS)
     west, south, east, north = bbox.bounds
     affine = rasterio.transform.from_bounds(west, south, east, north, width, height)
+
+    # Compute image using that resolution
+    img = compute(req.image, size=(width, height), bounds=bbox.bounds, crs=req.crs)
 
     # Prepare GeoTIFF profile (COG, CRS, transform)
     profile = cog_profiles["deflate"].copy()
