@@ -74,7 +74,8 @@ async def export(req: ExportRequest):
     width, height = math.ceil(window.width), math.ceil(window.height)
 
     # Compute image using that resolution
-    img = np.ones((width, height), dtype=np.uint8)
+    # TODO: Compute image based on image computation graph
+    img = np.ones((1, width, height), dtype=np.uint8)
 
     # Recalculate affine transformation for output file (in output CRS)
     west, south, east, north = bbox.bounds
@@ -84,15 +85,17 @@ async def export(req: ExportRequest):
     profile = cog_profiles["deflate"].copy()
     profile.update(
         dtype=img.dtype,
-        count=1,
+        count=img.shape[0],
         crs=req.crs,
         transform=affine,
-        width=img.shape[0],
-        height=img.shape[1],
+        width=img.shape[1],
+        height=img.shape[2],
     )
 
     # Write to file
+    # TODO: Use windowed writing (based on block size)
+    # TODO: If it's too large, retile into multiple COG files
     with rasterio.open(req.path, "w", **profile) as dst:
-        dst.write(img, 1)
+        dst.write(img)
 
     return {"result": "ok"}
