@@ -1,6 +1,3 @@
-import rioxarray
-import dask
-
 class ImageCollection:
     def __init__(self, id):
         self.id = id
@@ -14,5 +11,4 @@ class Image:
 
     @classmethod
     def load(cls, url, **kwargs):
-        rds = rioxarray.open_rasterio(url, **kwargs)
-        return cls(rds)
+        return cls(None)
