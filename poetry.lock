@@ -466,6 +466,20 @@ tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
+name = "pytest-mock"
+version = "3.10.0"
+description = "Thin-wrapper around the mock package for easier use with pytest"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+pytest = ">=5.0"
+
+[package.extras]
+dev = ["pre-commit", "tox", "pytest-asyncio"]
+
+[[package]]
 name = "pytest-watch"
 version = "4.2.0"
 description = "Local continuous test runner with pytest and watchdog."
@@ -746,7 +760,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "36e9d7d373cda6f2d5c710a47c34ceb236115bb47f8e31673244457aa4285239"
+content-hash = "dc6256a2139dd1d69aa6277fb71c2540c8f219b7873dfaf3c7bd7a8d69f0dafb"
 
 [metadata.files]
 affine = []
@@ -786,6 +800,7 @@ pyparsing = []
 pyproj = []
 pystac = []
 pytest = []
+pytest-mock = []
 pytest-watch = []
 python-dateutil = []
 python-dotenv = []
