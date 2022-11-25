@@ -23,8 +23,12 @@ class Image:
         return cls(cls._constant(value))
 
     def get_map(self):
-        api = APIClient()
-        self._map = api.get_map(self._graph)
+        client = APIClient()
+        self._map = client.get_map(self._graph)
+
+    def export(self, *, scale, path, bounds, crs="epsg:4326"):
+        client = APIClient()
+        return client.export(self, scale=scale, crs=crs, bounds=bounds, path=path)
 
     def abs(self):
         return Image({"name": "Image.abs", "args": [self._graph]})
