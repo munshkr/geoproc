@@ -1,5 +1,5 @@
-from eotoolkit.client import APIClient
-from eotoolkit.image import Image
+from eoproc.client import APIClient
+from eoproc.image import Image
 import httpx
 
 

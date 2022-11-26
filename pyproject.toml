@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "eotoolkit"
+name = "eoproc"
 version = "0.1.0"
-description = "An extensible open source Earth Observation toolkit"
+description = "An extensible open source toolkit for processing geospatial imagery with ease"
 authors = ["Damián Silvani <munshkr@gmail.com>"]
 license = "Apache-2.0"
 

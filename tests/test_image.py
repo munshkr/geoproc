@@ -1,4 +1,4 @@
-from eotoolkit.image import Image
+from eoproc.image import Image
 
 
 def test_image_constant():
