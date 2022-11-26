@@ -47,7 +47,7 @@ def compute(
             return src.read(
                 out_shape=(1, h, w),
                 window=window,
-                resampling=Resampling.average,
+                resampling=Resampling.nearest,
                 indexes=[1],
             )
     elif fname == "Image.abs":
