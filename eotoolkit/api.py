@@ -7,7 +7,8 @@ class APIClient:
 
     def get_map(self, image):
         r = httpx.post(f"{self.url}/map", json=image.graph)
-        return r.json()
+        res = r.json()
+        return res["detail"]
 
     def export(self, image, *, scale, in_crs, crs, bounds, path):
         data = {

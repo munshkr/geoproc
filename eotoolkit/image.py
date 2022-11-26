@@ -22,9 +22,9 @@ class Image:
     def constant(cls, value):
         return cls(cls._constant(value))
 
-    def get_map(self):
+    def get_map(self, vis_params={}):
         client = APIClient()
-        self._map = client.get_map(self._graph)
+        return client.get_map(self)
 
     def export(self, *, path, bounds, scale=1000, in_crs="epsg:4326", crs="epsg:4326"):
         client = APIClient()

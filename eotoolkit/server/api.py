@@ -4,14 +4,19 @@ from typing import Tuple
 import rasterio
 import rasterio.transform
 import rasterio.windows
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 from pyproj import CRS, Transformer
 from rio_cogeo.profiles import cog_profiles
+from rio_tiler.io.rasterio import Reader
+from rio_tiler.profiles import img_profiles
 from shapely.geometry import box
 from shapely.ops import transform
 
 from .image import compute
+
+# FIXME: This should be stored in Redis or something
+maps = {}
 
 
 class ExportRequest(BaseModel):
@@ -32,14 +37,50 @@ async def root():
 
 
 @app.post("/map")
-async def map():
+async def map(image: dict, request: Request):
     id = uuid.uuid4()
+    maps[str(id)] = image
+
     return {
         "detail": {
             "id": id,
-            "tiles_url": "http://localhost:8000/tiles/{id}/{{z}}/{{x}}/{{y}}.png",
+            "tiles_url": f"{request.base_url}tiles/{id}/{{z}}/{{x}}/{{y}}.png",
         }
     }
+
+
+@app.get(
+    r"/tiles/{id}/{z}/{x}/{y}.png",
+    responses={
+        200: {
+            "content": {"image/png": {}},
+            "description": "Return an image.",
+        }
+    },
+    # response_class=ImageResponse,
+    description="Read COG and return a tile",
+)
+def tile(
+    id: str,
+    z: int,
+    x: int,
+    y: int,
+):
+    """Handle tile requests."""
+    image = maps.get(id)
+    if not image:
+        raise HTTPException(status_code=404, detail=f"Map id {id} not found")
+
+    if image["name"] != "Image.load":
+        raise HTTPException(
+            status_code=400, detail=f"Only Image.load is implemented for now"
+        )
+
+    path = image["args"][0]
+    with Reader(path) as cog:
+        img = cog.tile(x, y, z)
+    content = img.render(img_format="PNG", **img_profiles.get("png"))
+    return Response(content, media_type="image/png")
 
 
 @app.post("/export")
