@@ -1,4 +1,4 @@
-from eotoolkit.api import APIClient
+from eotoolkit.client import APIClient
 from eotoolkit.image import Image
 import httpx
 

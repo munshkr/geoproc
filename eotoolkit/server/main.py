@@ -1,11 +1,9 @@
 import uuid
-from typing import Tuple
 
 import rasterio
 import rasterio.transform
 import rasterio.windows
-from fastapi import FastAPI, HTTPException, Query, Request, Response
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request, Response
 from pyproj import CRS, Transformer
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler.io.rasterio import Reader
@@ -15,18 +13,10 @@ from shapely.geometry import box
 from shapely.ops import transform
 
 from .image import compute
+from .models import ExportRequest
 
 # FIXME: This should be stored in Redis or something
 maps = {}
-
-
-class ExportRequest(BaseModel):
-    image: dict
-    in_crs: str = "epsg:4326"
-    crs: str = "epsg:4326"
-    scale: int = 1000
-    bounds: Tuple[float, float, float, float]
-    path: str
 
 
 app = FastAPI()

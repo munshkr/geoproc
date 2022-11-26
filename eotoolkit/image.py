@@ -1,4 +1,4 @@
-from .api import APIClient
+from .client import APIClient
 
 
 class Image:
