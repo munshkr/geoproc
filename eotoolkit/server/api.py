@@ -10,6 +10,7 @@ from pyproj import CRS, Transformer
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler.io.rasterio import Reader
 from rio_tiler.profiles import img_profiles
+from rio_tiler.errors import TileOutsideBounds
 from shapely.geometry import box
 from shapely.ops import transform
 
@@ -78,7 +79,10 @@ def tile(
 
     path = image["args"][0]
     with Reader(path) as cog:
-        img = cog.tile(x, y, z)
+        try:
+            img = cog.tile(x, y, z)
+        except TileOutsideBounds:
+            return Response(status_code=204)
     content = img.render(img_format="PNG", **img_profiles.get("png"))
     return Response(content, media_type="image/png")
 
