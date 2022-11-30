@@ -1,16 +1,28 @@
 import httpx
 
+from .image import Image
+from .types import Bounds
+
 
 class APIClient:
-    def __init__(self, url="http://localhost:8000"):
+    def __init__(self, url: str = "http://localhost:8000"):
         self.url = url
 
-    def get_map(self, image):
+    def get_map(self, image: Image) -> dict[str, str]:
         r = httpx.post(f"{self.url}/map", json=image.graph)
         res = r.json()
         return res["detail"]
 
-    def export(self, image, *, scale, in_crs, crs, bounds, path):
+    def export(
+        self,
+        image: Image,
+        *,
+        scale: float,
+        in_crs: str,
+        crs: str,
+        bounds: Bounds,
+        path: str,
+    ) -> dict:
         data = {
             "image": image.graph,
             "scale": scale,

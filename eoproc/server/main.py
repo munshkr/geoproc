@@ -6,14 +6,14 @@ import rasterio.windows
 from fastapi import FastAPI, HTTPException, Request, Response
 from pyproj import CRS, Transformer
 from rio_cogeo.profiles import cog_profiles
+from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.rasterio import Reader
 from rio_tiler.profiles import img_profiles
-from rio_tiler.errors import TileOutsideBounds
 from shapely.geometry import box
 from shapely.ops import transform
 
-from .image import compute
-from .models import ExportRequest
+from eoproc.server.image import compute
+from eoproc.server.models import ExportRequest
 
 # FIXME: This should be stored in Redis or something
 maps = {}
@@ -67,13 +67,13 @@ def tile(
             status_code=400, detail=f"Only Image.load is implemented for now"
         )
 
-    path = image["args"][0]
-    with Reader(path) as cog:
+    path: str = image["args"][0]
+    with Reader(input=path) as cog:  # type: ignore
         try:
             img = cog.tile(x, y, z)
         except TileOutsideBounds:
             return Response(status_code=204)
-    content = img.render(img_format="PNG", **img_profiles.get("png"))
+    content = img.render(img_format="PNG", **img_profiles.get("png"))  # type: ignore
     return Response(content, media_type="image/png")
 
 
@@ -112,7 +112,7 @@ async def export(req: ExportRequest):
     width, height = round(window.width), round(window.height)
 
     # Compute image using that resolution
-    img = compute(req.image, size=(width, height), bounds=bbox.bounds, crs=req.in_crs)
+    img = compute(req.image, size=(width, height), bounds=bbox.bounds, crs=req.in_crs)  # type: ignore
 
     # Recalculate affine transformation for output file (in output CRS)
     project = Transformer.from_crs(req.in_crs, req.crs, always_xy=True).transform

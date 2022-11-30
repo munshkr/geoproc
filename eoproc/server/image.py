@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+import numpy.typing as npt
 import rasterio
 import rasterio.transform
 import rasterio.windows
@@ -10,12 +11,33 @@ from shapely.geometry import box
 from shapely.ops import transform
 
 
+class Image:
+    def __init__(self, arg):
+        if isinstance(arg, str):
+            self._kind = "file"
+            self._path = arg
+        elif isinstance(arg, int) or isinstance(arg, float):
+            self._kind = "constant"
+            self._value = arg
+
+    def part(self, row, col, width, height):
+        pass
+
+    @classmethod
+    def load(cls, path):
+        return cls(path)
+
+    @classmethod
+    def constant(cls, value):
+        return cls(value)
+
+
 def compute(
     image: dict,
     size: Tuple[int, int],
     bounds: Tuple[float, float, float, float],
     crs,
-) -> np.array:
+) -> npt.NDArray:
     w, h = size
 
     fname = image["name"]
