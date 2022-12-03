@@ -1,1 +1,1 @@
-from .image import *
+from eoproc.image import *

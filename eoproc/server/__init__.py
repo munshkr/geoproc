@@ -1,1 +1,1 @@
-from .main import app
+from eoproc.server.main import app

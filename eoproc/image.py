@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Union
 
-from .types import Bounds
+from eoproc.types import Bounds
 
 
 class Image:

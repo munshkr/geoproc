@@ -1,7 +1,7 @@
 import httpx
 
-from .image import Image
-from .types import Bounds
+from eoproc.image import Image
+from eoproc.types import Bounds
 
 
 class APIClient:
