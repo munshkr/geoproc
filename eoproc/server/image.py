@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +12,7 @@ from shapely.ops import transform
 
 
 class Image:
-    def __init__(self, arg):
+    def __init__(self, arg: Union[str, int, float]):
         if isinstance(arg, str):
             self._kind = "file"
             self._path = arg

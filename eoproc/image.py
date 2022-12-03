@@ -19,7 +19,7 @@ class Image:
         return self._graph.copy()
 
     @classmethod
-    def load(cls, url: str) -> Image:
+    def load(cls, url: str) -> "Image":
         return cls(cls._load(url))
 
     @classmethod
