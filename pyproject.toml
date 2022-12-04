@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "eoproc"
+name = "geoproc"
 version = "0.1.0"
 description = "An extensible open source toolkit for processing geospatial imagery with ease"
 authors = ["Damián Silvani <munshkr@gmail.com>"]

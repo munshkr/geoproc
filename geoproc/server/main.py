@@ -12,8 +12,8 @@ from rio_tiler.profiles import img_profiles
 from shapely.geometry import box
 from shapely.ops import transform
 
-from eoproc.server.image import compute
-from eoproc.server.models import ExportRequest
+from geoproc.server.image import compute
+from geoproc.server.models import ExportRequest
 
 # FIXME: This should be stored in Redis or something
 maps = {}

@@ -1,5 +1,5 @@
-from eoproc.client import APIClient
-from eoproc.image import Image
+from geoproc.client import APIClient
+from geoproc.image import Image
 import httpx
 
 

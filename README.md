@@ -1,6 +1,6 @@
-# eoproc
+# geoproc
 
-An extensible open source toolkit for processing geospatial imagery with ease
+An open source toolkit for processing geospatial imagery with ease
 
 ## Development
 

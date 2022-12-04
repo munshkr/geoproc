@@ -1,7 +1,7 @@
 import httpx
 
-from eoproc.image import Image
-from eoproc.types import Bounds
+from geoproc.image import Image
+from geoproc.types import Bounds
 
 
 class APIClient:

@@ -1,4 +1,4 @@
-from eoproc.image import Image
+from geoproc.image import Image
 
 
 def test_image_constant():

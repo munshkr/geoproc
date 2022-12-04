@@ -1,7 +1,7 @@
 .PHONY: run install
 
 run:
-	poetry run uvicorn eoproc.server:app --reload
+	poetry run uvicorn geoproc.server:app --reload
 
 install:
 	poetry install
