@@ -381,7 +381,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "morecantile"
-version = "3.2.1"
+version = "3.2.2"
 description = "Construct and use map tile grids (a.k.a TileMatrixSet / TMS)."
 category = "main"
 optional = false
@@ -905,7 +905,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "c491f51779949508887c062c40cb5d346e5dfe96f483bf93f1483eebfb55a6b0"
+content-hash = "f7272867b6bebd307f576fd7faa2e22ccbd2c65d6bf69b2410c0380f103acf64"
 
 [metadata.files]
 affine = []
