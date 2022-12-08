@@ -54,27 +54,27 @@ class Image:
         )
 
     def abs(self) -> Image:
-        return Image({"name": "Image.abs", "args": [self._graph]})
+        return Image({"name": "abs", "args": [self._graph]})
 
     def __add__(self, other: Image) -> Image:
-        return Image({"name": "Image.add", "args": [self._graph, other._graph]})
+        return Image({"name": "add", "args": [self._graph, other._graph]})
 
     def __sub__(self, other: Image) -> Image:
-        return Image({"name": "Image.sub", "args": [self._graph, other._graph]})
+        return Image({"name": "sub", "args": [self._graph, other._graph]})
 
     def __mul__(self, other: Image) -> Image:
-        return Image({"name": "Image.mul", "args": [self._graph, other._graph]})
+        return Image({"name": "mul", "args": [self._graph, other._graph]})
 
     def __truediv__(self, other: Image) -> Image:
-        return Image({"name": "Image.truediv", "args": [self._graph, other._graph]})
+        return Image({"name": "truediv", "args": [self._graph, other._graph]})
 
     def __floordiv__(self, other: Image) -> Image:
-        return Image({"name": "Image.floordiv", "args": [self._graph, other._graph]})
+        return Image({"name": "floordiv", "args": [self._graph, other._graph]})
 
     @staticmethod
     def _load(url: str) -> dict:
-        return {"name": "Image.load", "args": [url]}
+        return {"name": "load", "args": [url]}
 
     @staticmethod
     def _constant(value: Union[int, float]) -> dict:
-        return {"name": "Image.constant", "args": [value]}
+        return {"name": "constant", "args": [value]}
