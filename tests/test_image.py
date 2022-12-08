@@ -31,7 +31,7 @@ def test_image_abs():
 
 def test_image_add():
     assert (Image(2) + Image(3)).graph == {
-        "name": "add",
+        "name": "__add__",
         "args": [
             {"name": "constant", "args": [2]},
             {"name": "constant", "args": [3]},
@@ -41,7 +41,7 @@ def test_image_add():
 
 def test_image_sub():
     assert (Image(4) - Image(3)).graph == {
-        "name": "sub",
+        "name": "__sub__",
         "args": [
             {"name": "constant", "args": [4]},
             {"name": "constant", "args": [3]},
@@ -51,7 +51,7 @@ def test_image_sub():
 
 def test_image_mult():
     assert (Image(2) * Image(2)).graph == {
-        "name": "mul",
+        "name": "__mul__",
         "args": [
             {"name": "constant", "args": [2]},
             {"name": "constant", "args": [2]},
@@ -61,7 +61,7 @@ def test_image_mult():
 
 def test_image_truediv():
     assert (Image(10) / Image(2)).graph == {
-        "name": "truediv",
+        "name": "__truediv__",
         "args": [
             {"name": "constant", "args": [10]},
             {"name": "constant", "args": [2]},
@@ -71,7 +71,7 @@ def test_image_truediv():
 
 def test_image_floordiv():
     assert (Image(9) // Image(2)).graph == {
-        "name": "floordiv",
+        "name": "__floordiv__",
         "args": [
             {"name": "constant", "args": [9]},
             {"name": "constant", "args": [2]},

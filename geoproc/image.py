@@ -57,19 +57,19 @@ class Image:
         return Image({"name": "abs", "args": [self._graph]})
 
     def __add__(self, other: Image) -> Image:
-        return Image({"name": "add", "args": [self._graph, other._graph]})
+        return Image({"name": "__add__", "args": [self._graph, other._graph]})
 
     def __sub__(self, other: Image) -> Image:
-        return Image({"name": "sub", "args": [self._graph, other._graph]})
+        return Image({"name": "__sub__", "args": [self._graph, other._graph]})
 
     def __mul__(self, other: Image) -> Image:
-        return Image({"name": "mul", "args": [self._graph, other._graph]})
+        return Image({"name": "__mul__", "args": [self._graph, other._graph]})
 
     def __truediv__(self, other: Image) -> Image:
-        return Image({"name": "truediv", "args": [self._graph, other._graph]})
+        return Image({"name": "__truediv__", "args": [self._graph, other._graph]})
 
     def __floordiv__(self, other: Image) -> Image:
-        return Image({"name": "floordiv", "args": [self._graph, other._graph]})
+        return Image({"name": "__floordiv__", "args": [self._graph, other._graph]})
 
     @staticmethod
     def _load(url: str) -> dict:

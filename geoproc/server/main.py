@@ -12,6 +12,7 @@ from rio_tiler.io.rasterio import Reader
 from rio_tiler.profiles import img_profiles
 from shapely.geometry import box
 from rio_tiler.types import BBox
+from typing import Any
 from shapely.ops import transform
 
 from geoproc.server.image import Image, image_eval, tile as _tile, export as _export
@@ -19,6 +20,7 @@ from geoproc.server.models import ExportRequest
 
 # FIXME: This should be stored in Redis or something
 maps: dict[str, Image] = {}
+maps_json: dict[str, dict[str, Any]] = {}
 
 
 app = FastAPI()
@@ -34,6 +36,7 @@ async def map(json: dict, request: Request):
     id = uuid.uuid4()
     image = image_eval(json)
     maps[str(id)] = image
+    maps_json[str(id)] = json
 
     return {
         "detail": {
@@ -64,10 +67,17 @@ def tile(
     if not image:
         raise HTTPException(status_code=404, detail=f"Map id {id} not found")
 
-    content = _tile(image, x=x, y=y, z=z)
+    try:
+        content = _tile(image, x=x, y=y, z=z)
+    except TileOutsideBounds:
+        return Response(status_code=204)
     return Response(content, media_type="image/png")
 
-    # if image["name"] != "Image.load":
+    # image = maps_json.get(id)
+    # if not image:
+    #     raise HTTPException(status_code=404, detail=f"Map id {id} not found")
+
+    # if image["name"] != "load":
     #     raise HTTPException(
     #         status_code=400, detail=f"Only Image.load is implemented for now"
     #     )

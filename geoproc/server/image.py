@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, Tuple, Union, Callable, Any
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import attr
 import numpy as np
@@ -9,14 +9,17 @@ import rasterio
 import rasterio.transform
 import rasterio.windows
 from morecantile.commons import Tile
+from morecantile.models import TileMatrixSet
 from pyproj import Transformer
+from rasterio.coords import BoundingBox
 from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.windows import Window
-from rio_tiler.constants import WGS84_CRS
+from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
+from rio_tiler.profiles import img_profiles
 from rio_tiler.types import BBox
 from shapely.geometry import box
 from shapely.ops import transform
@@ -29,7 +32,8 @@ MAX_MEMORY = 2**28
 @attr.s
 class ImageReader(BaseReader):
     input: Image = attr.ib(default=None)
-    geographic_crs: CRS = attr.ib(default=WGS84_CRS)
+    bounds: Optional[BBox] = attr.ib(default=None, init=False)
+    tms: TileMatrixSet = attr.ib(default=WEB_MERCATOR_TMS)
 
     def __init__(self, input: Image):
         self.input = input
@@ -56,19 +60,26 @@ class ImageReader(BaseReader):
 
         return self.part(
             tile_bounds,
-            dst_crs=self.tms.rasterio_crs,
             height=tilesize,
             width=tilesize,
+            dst_crs=self.tms.rasterio_crs,
         )
 
     def part(
         self,
         bbox: BBox,
+        height: int,
+        width: int,
         dst_crs: Optional[CRS] = None,
-        height: Optional[int] = None,
-        width: Optional[int] = None,
     ) -> ImageData:
-        ...
+        data = self.input.part(bbox, dst_crs, height, width)
+        return ImageData(
+            data=data,
+            # mask=data,
+            bounds=BoundingBox(*bbox),
+            crs=dst_crs,
+            band_names=["DATA"],
+        )
 
     def point(self, lon: float, lat: float) -> PointData:
         ...
@@ -160,10 +171,10 @@ class Image:
                     transform=src.transform,
                 )
                 return src.read(
-                    out_shape=(1, height, width),
+                    out_shape=(src.count, height, width),
                     window=window,
                     resampling=Resampling.nearest,
-                    indexes=[1],
+                    # indexes=[1],
                 )
 
         bounds, crs = read_bounds_and_crs(path)
