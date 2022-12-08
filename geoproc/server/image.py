@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, Tuple, Union
+from typing import Iterable, Optional, Tuple, Union, Callable, Any
 
 import attr
 import numpy as np
@@ -8,7 +8,7 @@ import numpy.typing as npt
 import rasterio
 import rasterio.transform
 import rasterio.windows
-from morecantile import Tile
+from morecantile.commons import Tile
 from pyproj import Transformer
 from rasterio.crs import CRS
 from rasterio.enums import Resampling
@@ -28,21 +28,21 @@ MAX_MEMORY = 2**28
 
 @attr.s
 class ImageReader(BaseReader):
-    input: Image = attr.ib()
+    input: Image = attr.ib(default=None)
     geographic_crs: CRS = attr.ib(default=WGS84_CRS)
 
-    def __init__(self, image: Image):
-        self.input = image
+    def __init__(self, input: Image):
+        self.input = input
 
     def __attrs_post_init__(self):
         self.bounds = self.input.bounds
         self.crs = self.input.crs
 
     def info(self) -> Info:
-        pass
+        ...
 
     def statistics(self) -> dict[str, BandStatistics]:
-        pass
+        ...
 
     def tile(
         self, tile_x: int, tile_y: int, tile_z: int, tilesize: int = 256
@@ -68,19 +68,19 @@ class ImageReader(BaseReader):
         height: Optional[int] = None,
         width: Optional[int] = None,
     ) -> ImageData:
-        pass
+        ...
 
     def point(self, lon: float, lat: float) -> PointData:
-        pass
+        ...
 
     def preview(self) -> ImageData:
-        pass
+        ...
 
     def feature(self, shape: dict) -> ImageData:
-        pass
+        ...
 
     def read(self, window: Window) -> npt.NDArray:
-        return np.array([])
+        ...
 
 
 class ImageWriter:
@@ -109,90 +109,112 @@ class ImageWriter:
         yield Window()
 
 
+PartCallable = Callable[[BBox, CRS, int, int], npt.NDArray]
+
+
+def read_bounds_and_crs(path: str) -> Tuple[BBox, CRS]:
+    with rasterio.open(path) as src:
+        return (src.bounds, src.crs)
+
+
+def bounds_union(a: Optional[BBox], b: Optional[BBox]) -> Optional[BBox]:
+    if a is None and b is None:
+        return
+    if a is None:
+        return b
+    if b is None:
+        return a
+    minx = min(a[0], b[0])
+    miny = min(a[1], b[1])
+    maxx = max(a[2], b[2])
+    maxy = max(a[3], b[3])
+    return (minx, miny, maxx, maxy)
+
+
 class Image:
-    def __init__(self, arg: Union[str, int, float]):
-        if isinstance(arg, str):
-            self._kind = "file"
-            self._path = arg
-        elif isinstance(arg, int) or isinstance(arg, float):
-            self._kind = "constant"
-            self._value = arg
-
-    @property
-    def bounds(self) -> BBox:
-        # TODO
-        return (0, 0, 0, 0)
-
-    @property
-    def crs(self) -> CRS:
-        # TODO
-        return WGS84_CRS
+    def __init__(
+        self,
+        part: PartCallable,
+        *,
+        bounds: Optional[BBox] = None,
+        crs: CRS = WGS84_CRS,
+    ):
+        self.part = part
+        self.bounds = bounds
+        self.crs = crs
 
     @classmethod
-    def load(cls, path):
-        return cls(path)
+    def load(cls, path: str) -> Image:
+        def _load_part(
+            bounds: BBox, dst_crs: CRS, height: int, width: int
+        ) -> npt.NDArray:
+            with rasterio.open(path) as src:
+                bbox = box(*bounds)
+                project = Transformer.from_crs(
+                    dst_crs, src.crs, always_xy=True
+                ).transform
+                repr_bbox = transform(project, bbox)
+
+                window = rasterio.windows.from_bounds(
+                    *repr_bbox.bounds,
+                    transform=src.transform,
+                )
+                return src.read(
+                    out_shape=(1, height, width),
+                    window=window,
+                    resampling=Resampling.nearest,
+                    indexes=[1],
+                )
+
+        bounds, crs = read_bounds_and_crs(path)
+        return cls(_load_part, bounds=bounds, crs=crs)
 
     @classmethod
-    def constant(cls, value):
-        return cls(value)
+    def constant(cls, value: Union[float, int]) -> Image:
+        def _constant_part(
+            bounds: BBox, dst_crs: CRS, height: int, width: int
+        ) -> npt.NDArray:
+            return np.ones((1, height, width), dtype=np.min_scalar_type(value)) * value
+
+        return cls(_constant_part)
+
+    def abs(self) -> Image:
+        return Image(
+            lambda *args: np.abs(self.part(*args)), bounds=self.bounds, crs=self.crs
+        )
+
+    def __add__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__add__", other)
+
+    def __sub__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__sub__", other)
+
+    def __mul__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__mul__", other)
+
+    def __truediv__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__truediv__", other)
+
+    def __floordiv__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__floordiv__", other)
+
+    def _operator(self, method_name, other: Union[Image, int, float]) -> Image:
+        other_img = other if isinstance(other, Image) else Image.constant(other)
+        return Image(
+            lambda *args: getattr(self.part(*args), method_name)(other_img.part(*args)),
+            bounds=bounds_union(self.bounds, other_img.bounds),
+            crs=self.crs,
+        )
 
 
-def compute(
-    image: dict,
-    size: Tuple[int, int],
-    bounds: Tuple[float, float, float, float],
-    crs,
-) -> npt.NDArray:
-    w, h = size
-
-    fname = image["name"]
+def image_eval(
+    image_attr: dict,
+) -> Image:
+    method: Callable[..., Image] = getattr(Image, image_attr["name"])
     args = [
-        compute(arg, size=size, bounds=bounds, crs=crs)
-        if isinstance(arg, dict)
-        else arg
-        for arg in image["args"]
+        image_eval(arg) if isinstance(arg, dict) else arg for arg in image_attr["args"]
     ]
-
-    if fname == "Image.constant":
-        value = args[0]
-        return np.ones((1, h, w), dtype=np.min_scalar_type(value)) * value
-    elif fname == "Image.load":
-        path = args[0]
-        with rasterio.open(path) as src:
-            bbox = box(*bounds)
-            project = Transformer.from_crs(crs, src.crs, always_xy=True).transform
-            repr_bbox = transform(project, bbox)
-            left, bottom, right, top = repr_bbox.bounds
-
-            window = rasterio.windows.from_bounds(
-                left,
-                bottom,
-                right,
-                top,
-                transform=src.transform,
-            )
-            return src.read(
-                out_shape=(1, h, w),
-                window=window,
-                resampling=Resampling.nearest,
-                indexes=[1],
-            )
-    elif fname == "Image.abs":
-        return np.abs(args[0])
-    elif fname == "Image.add":
-        return args[0] + args[1]
-    elif fname == "Image.sub":
-        return args[0] - args[1]
-    elif fname == "Image.mul":
-        return args[0] * args[1]
-    elif fname == "Image.truediv":
-        return args[0] / args[1]
-    elif fname == "Image.floordiv":
-        return args[0] // args[1]
-
-    raise NotImplementedError(
-        f"unknown method {image['name']} with args {image['args']}"
-    )
+    return method(*args)
 
 
 def export(
