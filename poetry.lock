@@ -27,6 +27,14 @@ test = ["coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "pytest (>=7.0)", "pytes
 trio = ["trio (>=0.16,<0.22)"]
 
 [[package]]
+name = "async-timeout"
+version = "4.0.2"
+description = "Timeout context manager for asyncio programs"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "attrs"
 version = "22.1.0"
 description = "Classes Without Boilerplate"
@@ -254,6 +262,14 @@ description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
 category = "main"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "hiredis"
+version = "2.0.0"
+description = "Python wrapper for hiredis"
+category = "main"
+optional = false
+python-versions = ">=3.6"
 
 [[package]]
 name = "httpcore"
@@ -644,6 +660,22 @@ s3 = ["boto3 (>=1.2.4)"]
 test = ["boto3 (>=1.2.4)", "hypothesis", "packaging", "pytest-cov (>=2.2.0)", "pytest (>=2.8.2)", "shapely"]
 
 [[package]]
+name = "redis"
+version = "4.4.0"
+description = "Python client for Redis database and key-value store"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+async-timeout = ">=4.0.2"
+hiredis = {version = ">=1.0.0", optional = true, markers = "extra == \"hiredis\""}
+
+[package.extras]
+hiredis = ["hiredis (>=1.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
+
+[[package]]
 name = "requests"
 version = "2.28.1"
 description = "Python HTTP for Humans."
@@ -905,11 +937,12 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "f7272867b6bebd307f576fd7faa2e22ccbd2c65d6bf69b2410c0380f103acf64"
+content-hash = "b6da15ab1eb4d8069ff20186b8b582621d2dcaf526565c8aa2d85fcc50435879"
 
 [metadata.files]
 affine = []
 anyio = []
+async-timeout = []
 attrs = []
 black = []
 boto3 = []
@@ -928,6 +961,7 @@ exceptiongroup = []
 fastapi = []
 folium = []
 h11 = []
+hiredis = []
 httpcore = []
 httptools = []
 httpx = []
@@ -958,6 +992,7 @@ python-dateutil = []
 python-dotenv = []
 pyyaml = []
 rasterio = []
+redis = []
 requests = []
 rfc3986 = []
 rio-cogeo = []
