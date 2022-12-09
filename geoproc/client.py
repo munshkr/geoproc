@@ -35,7 +35,7 @@ class APIClient:
             "bounds": bounds,
             "path": path,
         }
-        r = httpx.post(f"{self.url}/export", json=data)
+        r = httpx.post(f"{self.url}/export", json=data, timeout=30 * 60)
         res = r.json()
         if r.is_error:
             raise RuntimeError(res["detail"])

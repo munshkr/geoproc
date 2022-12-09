@@ -26,6 +26,7 @@ from rio_tiler.types import BBox
 from geoproc.types import Bounds
 
 MAX_MEMORY = 2**28
+WINDOW_SIZE = 2**12
 
 
 @attr.s
@@ -45,6 +46,34 @@ class ImageReader(BaseReader):
         self.crs = self.input.crs
         self.dtype = self.input.dtype
         self.count = self.input.count
+
+    def window_and_bounds(
+        self, *, bounds: BBox, bounds_crs: CRS, crs: CRS, scale: int
+    ) -> Iterable[Tuple[Window, BBox]]:
+        proj_crs = crs if crs.is_projected else CRS.from_epsg(3857)
+        proj_bounds = transform_bounds(bounds_crs, proj_crs, *bounds, densify_pts=21)
+        proj_transform = rasterio.transform.from_origin(
+            west=proj_bounds[0],
+            north=proj_bounds[3],
+            xsize=scale,
+            ysize=scale,
+        )
+        window = rasterio.windows.from_bounds(
+            *proj_bounds,
+            transform=proj_transform,
+        )
+        height, width = round(window.height), round(window.width)
+
+        w = h = WINDOW_SIZE
+        for i in range(0, height, h):
+            for j in range(0, width, w):
+                real_h = min(h, abs(height - i))
+                real_w = min(w, abs(width - j))
+                win = Window(j, i, real_w, real_h)
+                win_bounds = rasterio.windows.bounds(
+                    window=win, transform=proj_transform
+                )
+                yield win, win_bounds
 
     def info(self) -> Info:
         ...

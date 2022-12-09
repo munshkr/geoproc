@@ -18,6 +18,7 @@ from rio_tiler.errors import TileOutsideBounds
 from shapely.geometry import box
 from shapely.ops import transform
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from tqdm import tqdm
 
 from geoproc.server.image import Image, ImageReader
 from geoproc.server.image import export as _export
@@ -121,7 +122,7 @@ async def export(req: ExportRequest):
     image = _image_eval(req.image)
 
     bounds = req.bounds
-    in_crs = req.in_crs
+    in_crs = req.in_crs and CRS.from_string(req.in_crs)
     if not bounds:
         in_crs = image.crs
         bounds = image.bounds
@@ -161,7 +162,6 @@ async def export(req: ExportRequest):
     )
     width, height = round(window.width), round(window.height)
 
-    # TODO: Use windowed writing (based on block size)
     # TODO: If it's too large, retile into multiple COG files
     with ImageReader(image) as src:
         profile = cog_profiles["deflate"].copy()
@@ -175,16 +175,26 @@ async def export(req: ExportRequest):
         )
 
         with rasterio.open(req.path, "w", **profile) as dst:
-            # windows = src.windows(scale=req.scale)
-            image_data = src.part(
-                bounds,
-                height,
-                width,
-                dst_crs=req.crs,
-                bounds_crs=in_crs,
+            window_bounds = list(
+                src.window_and_bounds(
+                    bounds=bounds,
+                    bounds_crs=in_crs,
+                    crs=crs,
+                    scale=req.scale,
+                )
             )
-            dst.write(image_data.data)
-            dst.write_mask(image_data.mask)
+
+            for win, win_bounds in tqdm(window_bounds, ascii=True):
+                # print("win", win, "height", height, "width", width)
+                image_data = src.part(
+                    win_bounds,
+                    win.height,
+                    win.width,
+                    bounds_crs=in_crs,
+                    dst_crs=req.crs,
+                )
+                dst.write(image_data.data, window=win)
+                dst.write_mask(image_data.mask, window=win)
 
     return {"result": "ok"}
 
