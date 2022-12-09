@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional, Tuple, Union, Any
+from copy import copy
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import attr
 import numpy as np
@@ -70,13 +71,7 @@ class ImageReader(BaseReader):
         width: int,
         dst_crs: Optional[CRS] = None,
     ) -> ImageData:
-        data = self.input.part(bbox, dst_crs, height, width)
-        return ImageData(
-            data=data,
-            bounds=BoundingBox(*bbox),
-            crs=dst_crs,
-            band_names=["DATA"],
-        )  # type: ignore
+        return self.input.part(bbox, dst_crs, height, width)
 
     def point(self, lon: float, lat: float) -> PointData:
         ...
@@ -117,7 +112,7 @@ class ImageWriter:
         yield Window()
 
 
-PartCallable = Callable[[BBox, CRS, int, int], npt.NDArray]
+PartCallable = Callable[[BBox, CRS, int, int], ImageData]
 
 
 def read_bounds_and_crs(path: str) -> Tuple[BBox, CRS]:
@@ -155,16 +150,15 @@ class Image:
     def load(cls, path: str) -> Image:
         def _load_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
-        ) -> npt.NDArray:
+        ) -> ImageData:
             with rasterio.open(path) as src:
-                image = reader.part(
+                return reader.part(
                     src,
                     bounds=bounds,
                     height=height,
                     width=width,
                     dst_crs=dst_crs,
                 )
-                return image.data
 
         bounds, crs = read_bounds_and_crs(path)
         return cls(_load_part, bounds=bounds, crs=crs)
@@ -173,15 +167,27 @@ class Image:
     def constant(cls, value: Union[float, int]) -> Image:
         def _constant_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
-        ) -> npt.NDArray:
-            return np.ones((1, height, width), dtype=np.min_scalar_type(value)) * value
+        ) -> ImageData:
+            ones = np.ones((1, height, width), dtype=np.min_scalar_type(value))
+            data = ones * value
+            mask = ones * 255
+            return ImageData(
+                data=data,
+                mask=mask,
+                bounds=BoundingBox(*bounds),
+                crs=dst_crs,
+                band_names=["CONSTANT"],
+            )
 
         return cls(_constant_part)
 
     def abs(self) -> Image:
-        return Image(
-            lambda *args: np.abs(self.part(*args)), bounds=self.bounds, crs=self.crs
-        )
+        def _part(*args):
+            img = self.part(*args)
+            img.data = np.abs(img.data)
+            return img
+
+        return Image(lambda *args: _part(*args), bounds=self.bounds, crs=self.crs)
 
     def __add__(self, other: Union[Image, int, float]) -> Image:
         return self._operator("__add__", other)
@@ -200,8 +206,16 @@ class Image:
 
     def _operator(self, method_name, other: Union[Image, int, float]) -> Image:
         other_img = other if isinstance(other, Image) else Image.constant(other)
+
+        def _part(other: Image, *args) -> ImageData:
+            img_data = self.part(*args)
+            other_img_data = other.part(*args)
+            new_img_data = copy(img_data)
+            new_img_data.data = getattr(img_data.data, method_name)(other_img_data.data)
+            return new_img_data
+
         return Image(
-            lambda *args: getattr(self.part(*args), method_name)(other_img.part(*args)),
+            lambda *args: _part(other_img, *args),
             bounds=bounds_union(self.bounds, other_img.bounds),
             crs=self.crs,
         )
