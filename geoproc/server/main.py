@@ -26,6 +26,8 @@ cache_redis.ping()
 
 app = FastAPI()
 
+TILE_HEADERS = {"Cache-Control": "max-age=31536000, immutable"}
+
 
 def set_map(uuid: str, image_dict: dict[str, Any]) -> None:
     body = json.dumps(image_dict)
@@ -73,7 +75,7 @@ async def map(image_json: dict, request: Request):
     },
     description="Read COG and return a tile",
 )
-def tile(id: str, z: int, x: int, y: int):
+def tile(response: Response, id: str, z: int, x: int, y: int):
     """Handle tile requests."""
     image_json = get_map(id)
     if image_json is None:
@@ -83,8 +85,8 @@ def tile(id: str, z: int, x: int, y: int):
     try:
         content = _tile(image, x=x, y=y, z=z)
     except TileOutsideBounds:
-        return Response(status_code=204)
-    return Response(content, media_type="image/png")
+        return Response(status_code=204, headers=TILE_HEADERS)
+    return Response(content, media_type="image/png", headers=TILE_HEADERS)
 
 
 @app.post("/export")
@@ -121,7 +123,7 @@ async def export(req: ExportRequest):
     )
     width, height = round(window.width), round(window.height)
 
-    image = image_eval(req.image)
+    image = _image_eval(req.image)
 
     # Compute image using that resolution
     data = image.part(req.bounds, req.in_crs, width, height)
