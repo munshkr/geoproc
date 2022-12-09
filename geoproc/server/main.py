@@ -19,7 +19,7 @@ from shapely.geometry import box
 from shapely.ops import transform
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from geoproc.server.image import Image
+from geoproc.server.image import Image, ImageReader
 from geoproc.server.image import export as _export
 from geoproc.server.image import image_eval as _image_eval
 from geoproc.server.image import tile as _tile
@@ -150,9 +150,6 @@ async def export(req: ExportRequest):
         xsize=req.scale,
         ysize=req.scale,
     )
-    # affine = rasterio.transform.from_bounds(
-    #     west=minx, south=miny, east=maxx, north=maxy
-    # )
 
     # Create a window to calculate width and height in pixels
     window = rasterio.windows.from_bounds(
@@ -164,19 +161,9 @@ async def export(req: ExportRequest):
     )
     width, height = round(window.width), round(window.height)
 
-    # Compute image using that resolution
-    image_data = image.part(bounds, in_crs, width, height)
-
-    # Recalculate affine transformation for output file (in output CRS)
-    project = Transformer.from_crs(in_crs, req.crs, always_xy=True).transform
-    out_bbox = transform(project, bbox)
-    west, south, east, north = out_bbox.bounds
-    out_transform = rasterio.transform.from_bounds(
-        west, south, east, north, width, height
-    )
-    # out_transform = rasterio.transform.from_origin(
-    #     west, north, xsize=req.scale, ysize=req.scale
-    # )
+    with ImageReader(image) as src:
+        # Compute image using that resolution
+        image_data = src.part(bounds, height, width, dst_crs=req.crs, bounds_crs=in_crs)
 
     # Prepare GeoTIFF profile (COG, CRS, transform)
     profile = cog_profiles["deflate"].copy()
@@ -185,8 +172,8 @@ async def export(req: ExportRequest):
         count=image_data.data.shape[0],
         height=image_data.data.shape[1],
         width=image_data.data.shape[2],
-        crs=req.crs,
-        transform=out_transform,
+        crs=image_data.crs,
+        transform=image_data.transform,
     )
 
     # Write to file
@@ -194,13 +181,13 @@ async def export(req: ExportRequest):
     # TODO: If it's too large, retile into multiple COG files
     with rasterio.open(req.path, "w", **profile) as dst:
         dst.write(image_data.data)
+        dst.write_mask(image_data.mask)
 
     return {"result": "ok"}
 
 
 @app.get("/cache-info")
 async def cache_info():
-    print(dir(image_eval.cache_info()))
     return {
         "image_eval": image_eval.cache_info()._asdict(),
     }

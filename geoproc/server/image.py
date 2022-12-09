@@ -13,6 +13,7 @@ from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
+from rasterio.warp import transform_bounds
 from rasterio.windows import Window
 from rio_tiler import reader
 from rio_tiler.constants import CRS, WEB_MERCATOR_TMS, WGS84_CRS
@@ -61,16 +62,22 @@ class ImageReader(BaseReader):
             height=tilesize,
             width=tilesize,
             dst_crs=self.tms.rasterio_crs,
+            bounds_crs=None,
         )
 
     def part(
         self,
-        bbox: BBox,
+        bounds: BBox,
         height: int,
         width: int,
         dst_crs: Optional[CRS] = None,
+        bounds_crs: Optional[CRS] = WGS84_CRS,
     ) -> ImageData:
-        return self.input.part(bbox, dst_crs, height, width)
+        if not dst_crs:
+            dst_crs = bounds_crs
+        if bounds_crs and bounds_crs != dst_crs:
+            bounds = transform_bounds(bounds_crs, dst_crs, *bounds, densify_pts=21)
+        return self.input.part(bounds, dst_crs, height, width)
 
     def point(self, lon: float, lat: float) -> PointData:
         ...
