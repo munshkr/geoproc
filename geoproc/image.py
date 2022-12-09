@@ -56,19 +56,24 @@ class Image:
     def abs(self) -> Image:
         return Image({"name": "abs", "args": [self._graph]})
 
-    def __add__(self, other: Image) -> Image:
+    def __add__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__add__", "args": [self._graph, other._graph]})
 
-    def __sub__(self, other: Image) -> Image:
+    def __sub__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__sub__", "args": [self._graph, other._graph]})
 
-    def __mul__(self, other: Image) -> Image:
+    def __mul__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__mul__", "args": [self._graph, other._graph]})
 
-    def __truediv__(self, other: Image) -> Image:
+    def __truediv__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__truediv__", "args": [self._graph, other._graph]})
 
-    def __floordiv__(self, other: Image) -> Image:
+    def __floordiv__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__floordiv__", "args": [self._graph, other._graph]})
 
     @staticmethod
