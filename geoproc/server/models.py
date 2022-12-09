@@ -1,11 +1,15 @@
+from typing import Optional
+
 from pydantic import BaseModel
-from typing import Tuple
+from rasterio.crs import CRS
+from rio_tiler.constants import WGS84_CRS
+from rio_tiler.types import BBox
 
 
 class ExportRequest(BaseModel):
     image: dict
-    in_crs: str = "epsg:4326"
-    crs: str = "epsg:4326"
+    in_crs: str = str(WGS84_CRS)
+    crs: str = str(WGS84_CRS)
     scale: int = 1000
-    bounds: Tuple[float, float, float, float]
+    bounds: Optional[BBox]
     path: str

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import httpx
 
 from geoproc.image import Image
@@ -11,6 +13,8 @@ class APIClient:
     def get_map(self, image: Image) -> dict[str, str]:
         r = httpx.post(f"{self.url}/map", json=image.graph)
         res = r.json()
+        if r.is_error:
+            raise RuntimeError(res["detail"])
         return res["detail"]
 
     def export(
@@ -20,7 +24,7 @@ class APIClient:
         scale: float,
         in_crs: str,
         crs: str,
-        bounds: Bounds,
+        bounds: Optional[Bounds] = None,
         path: str,
     ) -> dict:
         data = {
@@ -32,4 +36,7 @@ class APIClient:
             "path": path,
         }
         r = httpx.post(f"{self.url}/export", json=data)
-        return r.json()
+        res = r.json()
+        if r.is_error:
+            raise RuntimeError(res["detail"])
+        return res

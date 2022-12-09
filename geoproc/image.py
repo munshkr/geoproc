@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import Optional, Union
 
 from geoproc.types import Bounds
 
@@ -34,9 +34,9 @@ class Image:
 
     def export(
         self,
-        *,
         path: str,
-        bounds: Bounds,
+        *,
+        bounds: Optional[Bounds] = None,
         scale: float = 1000,
         in_crs: str = "epsg:4326",
         crs: str = "epsg:4326",

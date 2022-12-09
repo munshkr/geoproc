@@ -12,11 +12,10 @@ import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
 from rasterio.coords import BoundingBox
-from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.windows import Window
 from rio_tiler import reader
-from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
+from rio_tiler.constants import CRS, WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData

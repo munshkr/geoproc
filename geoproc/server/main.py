@@ -8,12 +8,16 @@ import rasterio.transform
 import rasterio.windows
 import redis
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pyproj import Transformer
 from rasterio.crs import CRS
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler.errors import TileOutsideBounds
 from shapely.geometry import box
 from shapely.ops import transform
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from geoproc.server.image import Image
 from geoproc.server.image import export as _export
@@ -45,6 +49,29 @@ def get_map(uuid: str) -> Optional[str]:
 def image_eval(image_json: str) -> Image:
     image_dict = json.loads(image_json)
     return _image_eval(image_dict)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        jsonable_encoder({"code": 400, "detail": str(exc.detail)}),
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        jsonable_encoder({"code": 400, "detail": str(exc)}), status_code=400
+    )
+
+
+@app.exception_handler(500)
+async def internal_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        jsonable_encoder({"code": 500, "detail": "Internal Server Error"}),
+        status_code=500,
+    )
 
 
 @app.get("/")
@@ -91,14 +118,28 @@ def tile(response: Response, id: str, z: int, x: int, y: int):
 
 @app.post("/export")
 async def export(req: ExportRequest):
-    bbox = box(*req.bounds)
+    image = _image_eval(req.image)
+
+    bounds = req.bounds
+    in_crs = req.in_crs
+    if not bounds:
+        in_crs = image.crs
+        bounds = image.bounds
+
+    if not bounds:
+        return Response(
+            {"detail": "Image is boundless, you must specify bounds when exporting"},
+            status_code=400,
+        )
+
+    bbox = box(*bounds)
 
     # Reproject bounds to a projected CRS. If the output CRS is already
     # projected, use it, otherwise use Web Mercator (epsg:3857).
     # This is because scale units are expected to be in meters.
-    crs = CRS(req.crs)
+    crs = CRS.from_string(req.crs)
     repr_crs = crs if crs.is_projected else CRS.from_epsg(3857)
-    project = Transformer.from_crs(req.in_crs, repr_crs, always_xy=True).transform
+    project = Transformer.from_crs(in_crs, repr_crs, always_xy=True).transform
     repr_bbox = transform(project, bbox)
 
     # Calculate affine transformation for scale and bounds
@@ -123,13 +164,11 @@ async def export(req: ExportRequest):
     )
     width, height = round(window.width), round(window.height)
 
-    image = _image_eval(req.image)
-
     # Compute image using that resolution
-    data = image.part(req.bounds, req.in_crs, width, height)
+    image_data = image.part(bounds, in_crs, width, height)
 
     # Recalculate affine transformation for output file (in output CRS)
-    project = Transformer.from_crs(req.in_crs, req.crs, always_xy=True).transform
+    project = Transformer.from_crs(in_crs, req.crs, always_xy=True).transform
     out_bbox = transform(project, bbox)
     west, south, east, north = out_bbox.bounds
     out_transform = rasterio.transform.from_bounds(
@@ -142,10 +181,10 @@ async def export(req: ExportRequest):
     # Prepare GeoTIFF profile (COG, CRS, transform)
     profile = cog_profiles["deflate"].copy()
     profile.update(
-        dtype=data.dtype,
-        count=data.shape[0],
-        height=data.shape[1],
-        width=data.shape[2],
+        dtype=image_data.data.dtype,
+        count=image_data.data.shape[0],
+        height=image_data.data.shape[1],
+        width=image_data.data.shape[2],
         crs=req.crs,
         transform=out_transform,
     )
@@ -154,7 +193,7 @@ async def export(req: ExportRequest):
     # TODO: Use windowed writing (based on block size)
     # TODO: If it's too large, retile into multiple COG files
     with rasterio.open(req.path, "w", **profile) as dst:
-        dst.write(data)
+        dst.write(image_data.data)
 
     return {"result": "ok"}
 
