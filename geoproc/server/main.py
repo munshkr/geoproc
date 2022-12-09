@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 import rasterio
 import rasterio.transform
@@ -8,19 +9,17 @@ from pyproj import Transformer
 from rasterio.crs import CRS
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler.errors import TileOutsideBounds
-from rio_tiler.io.rasterio import Reader
-from rio_tiler.profiles import img_profiles
 from shapely.geometry import box
-from rio_tiler.types import BBox
-from typing import Any
 from shapely.ops import transform
 
-from geoproc.server.image import Image, image_eval, tile as _tile, export as _export
+from geoproc.server.image import Image
+from geoproc.server.image import export as _export
+from geoproc.server.image import image_eval
+from geoproc.server.image import tile as _tile
 from geoproc.server.models import ExportRequest
 
 # FIXME: This should be stored in Redis or something
 maps: dict[str, Image] = {}
-maps_json: dict[str, dict[str, Any]] = {}
 
 
 app = FastAPI()
@@ -36,7 +35,6 @@ async def map(json: dict, request: Request):
     id = uuid.uuid4()
     image = image_eval(json)
     maps[str(id)] = image
-    maps_json[str(id)] = json
 
     return {
         "detail": {
@@ -56,40 +54,16 @@ async def map(json: dict, request: Request):
     },
     description="Read COG and return a tile",
 )
-def tile(
-    id: str,
-    z: int,
-    x: int,
-    y: int,
-):
+def tile(id: str, z: int, x: int, y: int):
     """Handle tile requests."""
     image = maps.get(id)
     if not image:
         raise HTTPException(status_code=404, detail=f"Map id {id} not found")
-
     try:
         content = _tile(image, x=x, y=y, z=z)
     except TileOutsideBounds:
         return Response(status_code=204)
     return Response(content, media_type="image/png")
-
-    # image = maps_json.get(id)
-    # if not image:
-    #     raise HTTPException(status_code=404, detail=f"Map id {id} not found")
-
-    # if image["name"] != "load":
-    #     raise HTTPException(
-    #         status_code=400, detail=f"Only Image.load is implemented for now"
-    #     )
-
-    # path: str = image["args"][0]
-    # with Reader(input=path) as cog:  # type: ignore
-    #     try:
-    #         img = cog.tile(x, y, z)
-    #     except TileOutsideBounds:
-    #         return Response(status_code=204)
-    # content = img.render(img_format="PNG", **img_profiles.get("png"))  # type: ignore
-    # return Response(content, media_type="image/png")
 
 
 @app.post("/export")

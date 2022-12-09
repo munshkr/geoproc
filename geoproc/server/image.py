@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Optional, Tuple, Union
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 import attr
 import numpy as np
@@ -10,19 +10,17 @@ import rasterio.transform
 import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
-from pyproj import Transformer
 from rasterio.coords import BoundingBox
 from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.windows import Window
+from rio_tiler import reader
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.profiles import img_profiles
 from rio_tiler.types import BBox
-from shapely.geometry import box
-from shapely.ops import transform
 
 from geoproc.types import Bounds
 
@@ -75,11 +73,10 @@ class ImageReader(BaseReader):
         data = self.input.part(bbox, dst_crs, height, width)
         return ImageData(
             data=data,
-            # mask=data,
             bounds=BoundingBox(*bbox),
             crs=dst_crs,
             band_names=["DATA"],
-        )
+        )  # type: ignore
 
     def point(self, lon: float, lat: float) -> PointData:
         ...
@@ -160,22 +157,14 @@ class Image:
             bounds: BBox, dst_crs: CRS, height: int, width: int
         ) -> npt.NDArray:
             with rasterio.open(path) as src:
-                bbox = box(*bounds)
-                project = Transformer.from_crs(
-                    dst_crs, src.crs, always_xy=True
-                ).transform
-                repr_bbox = transform(project, bbox)
-
-                window = rasterio.windows.from_bounds(
-                    *repr_bbox.bounds,
-                    transform=src.transform,
+                image = reader.part(
+                    src,
+                    bounds=bounds,
+                    height=height,
+                    width=width,
+                    dst_crs=dst_crs,
                 )
-                return src.read(
-                    out_shape=(src.count, height, width),
-                    window=window,
-                    resampling=Resampling.nearest,
-                    # indexes=[1],
-                )
+                return image.data
 
         bounds, crs = read_bounds_and_crs(path)
         return cls(_load_part, bounds=bounds, crs=crs)
