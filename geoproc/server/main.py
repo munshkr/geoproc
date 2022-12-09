@@ -1,9 +1,12 @@
+import functools
+import json
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 import rasterio
 import rasterio.transform
 import rasterio.windows
+import redis
 from fastapi import FastAPI, HTTPException, Request, Response
 from pyproj import Transformer
 from rasterio.crs import CRS
@@ -14,15 +17,32 @@ from shapely.ops import transform
 
 from geoproc.server.image import Image
 from geoproc.server.image import export as _export
-from geoproc.server.image import image_eval
+from geoproc.server.image import image_eval as _image_eval
 from geoproc.server.image import tile as _tile
 from geoproc.server.models import ExportRequest
 
-# FIXME: This should be stored in Redis or something
-maps: dict[str, Image] = {}
-
+cache_redis = redis.Redis(host="localhost", port=6379, db=0)
+cache_redis.ping()
 
 app = FastAPI()
+
+
+def set_map(uuid: str, image_dict: dict[str, Any]) -> None:
+    body = json.dumps(image_dict)
+    cache_redis.set(f"maps.{uuid}", body)
+
+
+def get_map(uuid: str) -> Optional[str]:
+    body = cache_redis.get(f"maps.{uuid}")
+    if not body:
+        return
+    return body.decode()
+
+
+@functools.lru_cache(maxsize=64, typed=False)
+def image_eval(image_json: str) -> Image:
+    image_dict = json.loads(image_json)
+    return _image_eval(image_dict)
 
 
 @app.get("/")
@@ -31,15 +51,14 @@ async def root():
 
 
 @app.post("/map")
-async def map(json: dict, request: Request):
-    id = uuid.uuid4()
-    image = image_eval(json)
-    maps[str(id)] = image
+async def map(image_json: dict, request: Request):
+    new_uuid = str(uuid.uuid4())
+    set_map(new_uuid, image_json)
 
     return {
         "detail": {
-            "id": id,
-            "tiles_url": f"{request.base_url}tiles/{id}/{{z}}/{{x}}/{{y}}.png",
+            "id": new_uuid,
+            "tiles_url": f"{request.base_url}tiles/{new_uuid}/{{z}}/{{x}}/{{y}}.png",
         }
     }
 
@@ -56,9 +75,11 @@ async def map(json: dict, request: Request):
 )
 def tile(id: str, z: int, x: int, y: int):
     """Handle tile requests."""
-    image = maps.get(id)
-    if not image:
+    image_json = get_map(id)
+    if image_json is None:
         raise HTTPException(status_code=404, detail=f"Map id {id} not found")
+    image = image_eval(image_json)
+
     try:
         content = _tile(image, x=x, y=y, z=z)
     except TileOutsideBounds:
@@ -134,3 +155,11 @@ async def export(req: ExportRequest):
         dst.write(data)
 
     return {"result": "ok"}
+
+
+@app.get("/cache-info")
+async def cache_info():
+    print(dir(image_eval.cache_info()))
+    return {
+        "image_eval": image_eval.cache_info()._asdict(),
+    }

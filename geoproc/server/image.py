@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional, Tuple, Union
+from typing import Callable, Iterable, Optional, Tuple, Union, Any
 
 import attr
 import numpy as np
@@ -208,7 +208,7 @@ class Image:
 
 
 def image_eval(
-    image_attr: dict,
+    image_attr: dict[str, Any],
 ) -> Image:
     method: Callable[..., Image] = getattr(Image, image_attr["name"])
     args = [
