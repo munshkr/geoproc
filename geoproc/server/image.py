@@ -34,12 +34,17 @@ class ImageReader(BaseReader):
     bounds: Optional[BBox] = attr.ib(default=None, init=False)
     tms: TileMatrixSet = attr.ib(default=WEB_MERCATOR_TMS)
 
+    dtype: npt.DTypeLike = attr.ib(init=False)
+    count: int = attr.ib(default=1, init=False)
+
     def __init__(self, input: Image):
         self.input = input
 
     def __attrs_post_init__(self):
         self.bounds = self.input.bounds
         self.crs = self.input.crs
+        self.dtype = self.input.dtype
+        self.count = self.input.count
 
     def info(self) -> Info:
         ...
@@ -121,9 +126,9 @@ class ImageWriter:
 PartCallable = Callable[[BBox, CRS, int, int], ImageData]
 
 
-def read_bounds_and_crs(path: str) -> Tuple[BBox, CRS]:
+def read_raster_info(path: str) -> Tuple[BBox, CRS, npt.DTypeLike, int]:
     with rasterio.open(path) as src:
-        return (src.bounds, src.crs)
+        return (src.bounds, src.crs, src.profile["dtype"], src.count)
 
 
 def bounds_union(a: Optional[BBox], b: Optional[BBox]) -> Optional[BBox]:
@@ -147,10 +152,14 @@ class Image:
         *,
         bounds: Optional[BBox] = None,
         crs: CRS = WGS84_CRS,
+        dtype: npt.DTypeLike,
+        count: int = 1,
     ):
         self.part = part
         self.bounds = bounds
         self.crs = crs
+        self.dtype = dtype
+        self.count = count
 
     @classmethod
     def load(cls, path: str) -> Image:
@@ -166,15 +175,17 @@ class Image:
                     dst_crs=dst_crs,
                 )
 
-        bounds, crs = read_bounds_and_crs(path)
-        return cls(_load_part, bounds=bounds, crs=crs)
+        bounds, crs, dtype, count = read_raster_info(path)
+        return cls(_load_part, bounds=bounds, crs=crs, dtype=dtype, count=count)
 
     @classmethod
     def constant(cls, value: Union[float, int]) -> Image:
+        dtype = np.min_scalar_type(value)
+
         def _constant_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
         ) -> ImageData:
-            ones = np.ones((1, height, width), dtype=np.min_scalar_type(value))
+            ones = np.ones((1, height, width), dtype=dtype)
             data = ones * value
             mask = ones * 255
             return ImageData(
@@ -185,7 +196,7 @@ class Image:
                 band_names=["CONSTANT"],
             )
 
-        return cls(_constant_part)
+        return cls(_constant_part, dtype=dtype, count=1)
 
     def abs(self) -> Image:
         def _part(*args):
@@ -193,7 +204,13 @@ class Image:
             img.data = np.abs(img.data)
             return img
 
-        return Image(lambda *args: _part(*args), bounds=self.bounds, crs=self.crs)
+        return Image(
+            lambda *args: _part(*args),
+            bounds=self.bounds,
+            crs=self.crs,
+            dtype=self.dtype,
+            count=self.count,
+        )
 
     def __add__(self, other: Union[Image, int, float]) -> Image:
         return self._operator("__add__", other)
@@ -224,6 +241,8 @@ class Image:
             lambda *args: _part(other_img, *args),
             bounds=bounds_union(self.bounds, other_img.bounds),
             crs=self.crs,
+            dtype=np.float64,
+            count=self.count,
         )
 
 

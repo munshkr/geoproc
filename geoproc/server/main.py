@@ -161,27 +161,30 @@ async def export(req: ExportRequest):
     )
     width, height = round(window.width), round(window.height)
 
-    with ImageReader(image) as src:
-        # Compute image using that resolution
-        image_data = src.part(bounds, height, width, dst_crs=req.crs, bounds_crs=in_crs)
-
-    # Prepare GeoTIFF profile (COG, CRS, transform)
-    profile = cog_profiles["deflate"].copy()
-    profile.update(
-        dtype=image_data.data.dtype,
-        count=image_data.data.shape[0],
-        height=image_data.data.shape[1],
-        width=image_data.data.shape[2],
-        crs=image_data.crs,
-        transform=image_data.transform,
-    )
-
-    # Write to file
     # TODO: Use windowed writing (based on block size)
     # TODO: If it's too large, retile into multiple COG files
-    with rasterio.open(req.path, "w", **profile) as dst:
-        dst.write(image_data.data)
-        dst.write_mask(image_data.mask)
+    with ImageReader(image) as src:
+        profile = cog_profiles["deflate"].copy()
+        profile.update(
+            height=height,
+            width=width,
+            dtype=src.dtype,
+            count=src.count,
+            crs=req.crs,
+            transform=affine,
+        )
+
+        with rasterio.open(req.path, "w", **profile) as dst:
+            # windows = src.windows(scale=req.scale)
+            image_data = src.part(
+                bounds,
+                height,
+                width,
+                dst_crs=req.crs,
+                bounds_crs=in_crs,
+            )
+            dst.write(image_data.data)
+            dst.write_mask(image_data.mask)
 
     return {"result": "ok"}
 
