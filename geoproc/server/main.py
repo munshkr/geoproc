@@ -28,7 +28,7 @@ from geoproc.server.image import tile as _tile
 from geoproc.server.models import ExportRequest
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
-cache_redis.ping()
+
 
 app = FastAPI()
 
