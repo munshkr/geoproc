@@ -12,7 +12,18 @@ def test_api_client_get_map(mocker):
     client = APIClient()
     img = Image(42)
 
-    mocker.patch("httpx.post")
+    mocker.patch(
+        "httpx.post",
+        return_value=httpx.Response(
+            status_code=200,
+            json={
+                "detail": {
+                    "id": "some-id",
+                    "tiles_url": f"http://localhost:8000/tiles/some-id/{{z}}/{{x}}/{{y}}.png",
+                }
+            },
+        ),
+    )
 
     client.get_map(img)
 
