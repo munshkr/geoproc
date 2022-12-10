@@ -75,8 +75,9 @@ class ImageReader(BaseReader):
             *out_bounds, width=width, height=height
         )
 
-        for i in range(0, height, window_size):
-            for j in range(0, width, window_size):
+        h = w = window_size
+        for i in range(0, height, h):
+            for j in range(0, width, w):
                 real_h = min(h, abs(height - i))
                 real_w = min(w, abs(width - j))
                 win = Window(j, i, real_w, real_h)
