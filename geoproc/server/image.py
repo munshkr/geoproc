@@ -64,6 +64,11 @@ class ImageReader(BaseReader):
         )
         height, width = round(window.height), round(window.width)
 
+        out_bounds = transform_bounds(bounds_crs, crs, *bounds, densify_pts=21)
+        out_transform = rasterio.transform.from_bounds(
+            *out_bounds, width=width, height=height
+        )
+
         w = h = WINDOW_SIZE
         for i in range(0, height, h):
             for j in range(0, width, w):
@@ -71,7 +76,7 @@ class ImageReader(BaseReader):
                 real_w = min(w, abs(width - j))
                 win = Window(j, i, real_w, real_h)
                 win_bounds = rasterio.windows.bounds(
-                    window=win, transform=proj_transform
+                    window=win, transform=out_transform
                 )
                 yield win, win_bounds
 
