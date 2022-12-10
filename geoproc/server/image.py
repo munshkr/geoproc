@@ -48,7 +48,13 @@ class ImageReader(BaseReader):
         self.count = self.input.count
 
     def window_and_bounds(
-        self, *, bounds: BBox, bounds_crs: CRS, crs: CRS, scale: int
+        self,
+        *,
+        bounds: BBox,
+        bounds_crs: CRS,
+        crs: CRS,
+        scale: int,
+        window_size: int = WINDOW_SIZE,
     ) -> Iterable[Tuple[Window, BBox]]:
         proj_crs = crs if crs.is_projected else CRS.from_epsg(3857)
         proj_bounds = transform_bounds(bounds_crs, proj_crs, *bounds, densify_pts=21)
@@ -69,9 +75,8 @@ class ImageReader(BaseReader):
             *out_bounds, width=width, height=height
         )
 
-        w = h = WINDOW_SIZE
-        for i in range(0, height, h):
-            for j in range(0, width, w):
+        for i in range(0, height, window_size):
+            for j in range(0, width, window_size):
                 real_h = min(h, abs(height - i))
                 real_w = min(w, abs(width - j))
                 win = Window(j, i, real_w, real_h)
