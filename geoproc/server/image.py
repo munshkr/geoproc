@@ -293,6 +293,7 @@ class Image:
             other_img_data = other.part(*args)
             new_img_data = copy(img_data)
             new_img_data.data = getattr(img_data.data, method_name)(other_img_data.data)
+            new_img_data.mask = np.maximum(img_data.mask, other_img_data.mask)
             return new_img_data
 
         return Image(
