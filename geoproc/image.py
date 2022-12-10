@@ -53,8 +53,8 @@ class Image:
             crs=crs,
         )
 
-    def abs(self) -> Image:
-        return Image({"name": "abs", "args": [self._graph]})
+    def __abs__(self) -> Image:
+        return Image({"name": "__abs__", "args": [self._graph]})
 
     def __add__(self, other: Union[int, float, Image]) -> Image:
         other = Image.constant(other) if not isinstance(other, Image) else other

@@ -23,8 +23,8 @@ def test_image_init_load():
 
 def test_image_abs():
     img = Image(-4)
-    assert img.abs().graph == {
-        "name": "abs",
+    assert abs(img).graph == {
+        "name": "__abs__",
         "args": [{"name": "constant", "args": [-4]}],
     }
 
