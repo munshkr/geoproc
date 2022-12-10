@@ -2,6 +2,10 @@
 
 An open source toolkit for processing geospatial imagery with ease
 
+[![CI](https://github.com/munshkr/geoproc/actions/workflows/ci.yml/badge.svg)](https://github.com/munshkr/geoproc/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/munshkr/geoproc/branch/main/graph/badge.svg?token=OI1L05MO4Y)](https://codecov.io/gh/munshkr/geoproc)
+[![Issues](https://img.shields.io/github/issues-closed/munshkr/geoproc)](https://github.com/munshkr/geoproc/issues)
+
 ## Features
 
 * Work with multiple datasets in a straightforward and consistent way
