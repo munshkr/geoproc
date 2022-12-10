@@ -171,18 +171,22 @@ def read_raster_info(path: str) -> Tuple[BBox, CRS, npt.DTypeLike, int]:
         return (src.bounds, src.crs, src.profile["dtype"], src.count)
 
 
-def bounds_union(a: Optional[BBox], b: Optional[BBox]) -> Optional[BBox]:
+def bounds_union(
+    a: Optional[BBox], b: Optional[BBox], a_crs: CRS, b_crs: CRS
+) -> Tuple[Optional[BBox], CRS]:
     if a is None and b is None:
-        return
+        return None, a_crs
     if a is None:
-        return b
+        return b, b_crs
     if b is None:
-        return a
+        return a, a_crs
+    if b_crs != a_crs:
+        b = transform_bounds(b_crs, a_crs, *b)
     minx = min(a[0], b[0])
     miny = min(a[1], b[1])
     maxx = max(a[2], b[2])
     maxy = max(a[3], b[3])
-    return (minx, miny, maxx, maxy)
+    return (minx, miny, maxx, maxy), a_crs
 
 
 class Image:
@@ -296,10 +300,14 @@ class Image:
             new_img_data.mask = np.maximum(img_data.mask, other_img_data.mask)
             return new_img_data
 
+        new_bounds, new_crs = bounds_union(
+            self.bounds, other_img.bounds, self.crs, other_img.crs
+        )
+
         return Image(
             lambda *args: _part(other_img, *args),
-            bounds=bounds_union(self.bounds, other_img.bounds),
-            crs=self.crs,
+            bounds=new_bounds,
+            crs=new_crs,
             dtype=np.float64,
             count=self.count,
         )
