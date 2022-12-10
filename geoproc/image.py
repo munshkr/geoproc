@@ -76,6 +76,30 @@ class Image:
         other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__floordiv__", "args": [self._graph, other._graph]})
 
+    def __lt__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__lt__", "args": [self._graph, other._graph]})
+
+    def __le__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__le__", "args": [self._graph, other._graph]})
+
+    def __eq__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__eq__", "args": [self._graph, other._graph]})
+
+    def __ne__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__ne__", "args": [self._graph, other._graph]})
+
+    def __ge__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__ge__", "args": [self._graph, other._graph]})
+
+    def __gt__(self, other: Union[int, float, Image]) -> Image:
+        other = Image.constant(other) if not isinstance(other, Image) else other
+        return Image({"name": "__gt__", "args": [self._graph, other._graph]})
+
     @staticmethod
     def _load(url: str) -> dict:
         return {"name": "load", "args": [url]}

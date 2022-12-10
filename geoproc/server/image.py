@@ -266,6 +266,24 @@ class Image:
     def __floordiv__(self, other: Union[Image, int, float]) -> Image:
         return self._operator("__floordiv__", other)
 
+    def __lt__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__lt__", other)
+
+    def __le__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__le__", other)
+
+    def __eq__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__eq__", other)
+
+    def __ne__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__ne__", other)
+
+    def __gt__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__gt__", other)
+
+    def __ge__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__ge__", other)
+
     def _operator(self, method_name, other: Union[Image, int, float]) -> Image:
         other_img = other if isinstance(other, Image) else Image.constant(other)
 

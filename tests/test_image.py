@@ -77,3 +77,63 @@ def test_image_floordiv():
             {"name": "constant", "args": [2]},
         ],
     }
+
+
+def test_image_lt():
+    assert (Image(9) < Image(2)).graph == {
+        "name": "__lt__",
+        "args": [
+            {"name": "constant", "args": [9]},
+            {"name": "constant", "args": [2]},
+        ],
+    }
+
+
+def test_image_le():
+    assert (Image(9) <= Image(2)).graph == {
+        "name": "__le__",
+        "args": [
+            {"name": "constant", "args": [9]},
+            {"name": "constant", "args": [2]},
+        ],
+    }
+
+
+def test_image_eq():
+    assert (Image(42) == Image(43)).graph == {
+        "name": "__eq__",
+        "args": [
+            {"name": "constant", "args": [42]},
+            {"name": "constant", "args": [43]},
+        ],
+    }
+
+
+def test_image_ne():
+    assert (Image(42) != Image(43)).graph == {
+        "name": "__ne__",
+        "args": [
+            {"name": "constant", "args": [42]},
+            {"name": "constant", "args": [43]},
+        ],
+    }
+
+
+def test_image_gt():
+    assert (Image(9) > Image(2)).graph == {
+        "name": "__gt__",
+        "args": [
+            {"name": "constant", "args": [9]},
+            {"name": "constant", "args": [2]},
+        ],
+    }
+
+
+def test_image_ge():
+    assert (Image(9) >= Image(2)).graph == {
+        "name": "__ge__",
+        "args": [
+            {"name": "constant", "args": [9]},
+            {"name": "constant", "args": [2]},
+        ],
+    }
