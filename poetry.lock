@@ -799,19 +799,6 @@ botocore = ">=1.12.36,<2.0a.0"
 crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
-name = "shapely"
-version = "1.8.5.post1"
-description = "Geometric objects, predicates, and operations"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-all = ["pytest", "pytest-cov", "numpy"]
-test = ["pytest", "pytest-cov"]
-vectorized = ["numpy"]
-
-[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -983,7 +970,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "a9dac492b4cd061f9827417e2dfd99feea39b25d12c5a1f9afbdc7f5974b4b9d"
+content-hash = "a5f20a317c4337c082158de40ce5c09093e3fe25699d2e895d1bad5fb9395e29"
 
 [metadata.files]
 affine = []
@@ -1046,7 +1033,6 @@ rfc3986 = []
 rio-cogeo = []
 rio-tiler = []
 s3transfer = []
-shapely = []
 six = []
 sniffio = []
 snuggs = []
