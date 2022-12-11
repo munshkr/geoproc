@@ -3,24 +3,15 @@ import json
 import uuid
 from typing import Any, Optional
 
-import rasterio
-import rasterio.transform
-import rasterio.windows
 import redis
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pyproj import Transformer
 from rasterio.crs import CRS
-from rasterio.warp import transform_bounds
-from rio_cogeo.profiles import cog_profiles
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.profiles import img_profiles
-from shapely.geometry import box
-from shapely.ops import transform
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from tqdm import tqdm
 
 from .image import Image, ImageReader
 from .image import eval_image as _eval_image
