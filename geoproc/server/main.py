@@ -23,7 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from tqdm import tqdm
 
 from geoproc.server.image import Image, ImageReader
-from geoproc.server.image import image_eval as _image_eval
+from geoproc.server.image import eval_image as _eval_image
 from geoproc.server.models import ExportRequest
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
@@ -47,9 +47,9 @@ def get_map(uuid: str) -> Optional[str]:
 
 
 @functools.lru_cache(maxsize=64, typed=False)
-def image_eval(image_json: str) -> Image:
+def eval_image(image_json: str) -> Image:
     image_dict = json.loads(image_json)
-    return _image_eval(image_dict)
+    return _eval_image(image_dict)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -108,22 +108,22 @@ def tile(id: str, z: int, x: int, y: int):
     image_json = get_map(id)
     if image_json is None:
         raise HTTPException(status_code=404, detail=f"Map id {id} not found")
-    image = image_eval(image_json)
 
+    image = eval_image(image_json)
     try:
         with ImageReader(image) as src:
-            img = src.tile(x, y, z)
+            data = src.tile(x, y, z)
     except TileOutsideBounds:
         return Response(status_code=204, headers=TILE_HEADERS)
 
     profile = img_profiles.get("png") or {}
-    content = img.render(img_format="PNG", **profile)
+    content = data.render(img_format="PNG", **profile)
     return Response(content, media_type="image/png", headers=TILE_HEADERS)
 
 
 @app.post("/export")
 async def export(req: ExportRequest):
-    image = _image_eval(req.image)
+    image = _eval_image(req.image)
 
     bounds = req.bounds
     in_crs = req.in_crs and CRS.from_string(req.in_crs)
@@ -212,5 +212,5 @@ async def export(req: ExportRequest):
 @app.get("/cache-info")
 async def cache_info():
     return {
-        "image_eval": image_eval.cache_info()._asdict(),
+        "image_eval": eval_image.cache_info()._asdict(),
     }

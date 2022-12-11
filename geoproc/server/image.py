@@ -299,11 +299,11 @@ class Image:
         )
 
 
-def image_eval(
+def eval_image(
     image_attr: dict[str, Any],
 ) -> Image:
     method: Callable[..., Image] = getattr(Image, image_attr["name"])
     args = [
-        image_eval(arg) if isinstance(arg, dict) else arg for arg in image_attr["args"]
+        eval_image(arg) if isinstance(arg, dict) else arg for arg in image_attr["args"]
     ]
     return method(*args)
