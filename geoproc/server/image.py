@@ -21,7 +21,133 @@ from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
 
+from geoproc.server.types import PartCallable
+
 WINDOW_SIZE = 2**12
+
+
+class Image:
+    def __init__(
+        self,
+        part: PartCallable,
+        *,
+        bounds: Optional[BBox] = None,
+        crs: CRS = WGS84_CRS,
+        dtype: npt.DTypeLike,
+        count: int = 1,
+    ):
+        self.part = part
+        self.bounds = bounds
+        self.crs = crs
+        self.dtype = dtype
+        self.count = count
+
+    @classmethod
+    def load(cls, path: str) -> Image:
+        def _load_part(
+            bounds: BBox, dst_crs: CRS, height: int, width: int
+        ) -> ImageData:
+            with rasterio.open(path) as src:
+                return reader.part(
+                    src,
+                    bounds=bounds,
+                    height=height,
+                    width=width,
+                    dst_crs=dst_crs,
+                )
+
+        bounds, crs, dtype, count = read_raster_info(path)
+        return cls(_load_part, bounds=bounds, crs=crs, dtype=dtype, count=count)
+
+    @classmethod
+    def constant(cls, value: Union[float, int]) -> Image:
+        dtype = np.min_scalar_type(value)
+
+        def _constant_part(
+            bounds: BBox, dst_crs: CRS, height: int, width: int
+        ) -> ImageData:
+            ones = np.ones((1, height, width), dtype=dtype)
+            data = ones * value
+            mask = ones * 255
+            return ImageData(
+                data=data,
+                mask=mask,
+                bounds=BoundingBox(*bounds),
+                crs=dst_crs,
+                band_names=["CONSTANT"],
+            )
+
+        return cls(_constant_part, dtype=dtype, count=1)
+
+    def abs(self) -> Image:
+        def _part(*args):
+            img = self.part(*args)
+            img.data = np.abs(img.data)
+            return img
+
+        return Image(
+            lambda *args: _part(*args),
+            bounds=self.bounds,
+            crs=self.crs,
+            dtype=self.dtype,
+            count=self.count,
+        )
+
+    def __add__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__add__", other)
+
+    def __sub__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__sub__", other)
+
+    def __mul__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__mul__", other)
+
+    def __truediv__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__truediv__", other)
+
+    def __floordiv__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__floordiv__", other)
+
+    def __lt__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__lt__", other)
+
+    def __le__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__le__", other)
+
+    def __eq__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__eq__", other)
+
+    def __ne__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__ne__", other)
+
+    def __gt__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__gt__", other)
+
+    def __ge__(self, other: Union[Image, int, float]) -> Image:
+        return self._operator("__ge__", other)
+
+    def _operator(self, method_name, other: Union[Image, int, float]) -> Image:
+        other_img = other if isinstance(other, Image) else Image.constant(other)
+
+        def _part(other: Image, *args) -> ImageData:
+            img_data = self.part(*args)
+            other_img_data = other.part(*args)
+            new_img_data = copy(img_data)
+            new_img_data.data = getattr(img_data.data, method_name)(other_img_data.data)
+            new_img_data.mask = np.maximum(img_data.mask, other_img_data.mask)
+            return new_img_data
+
+        new_bounds, new_crs = bounds_union(
+            self.bounds, other_img.bounds, self.crs, other_img.crs
+        )
+
+        return Image(
+            lambda *args: _part(other_img, *args),
+            bounds=new_bounds,
+            crs=new_crs,
+            dtype=np.float64,
+            count=self.count,
+        )
 
 
 @attr.s
@@ -147,9 +273,6 @@ class ImageWriter:
         pass
 
 
-PartCallable = Callable[[BBox, CRS, int, int], ImageData]
-
-
 def read_raster_info(path: str) -> Tuple[BBox, CRS, npt.DTypeLike, int]:
     with rasterio.open(path) as src:
         return (src.bounds, src.crs, src.profile["dtype"], src.count)
@@ -171,130 +294,6 @@ def bounds_union(
     maxx = max(a[2], b[2])
     maxy = max(a[3], b[3])
     return (minx, miny, maxx, maxy), a_crs
-
-
-class Image:
-    def __init__(
-        self,
-        part: PartCallable,
-        *,
-        bounds: Optional[BBox] = None,
-        crs: CRS = WGS84_CRS,
-        dtype: npt.DTypeLike,
-        count: int = 1,
-    ):
-        self.part = part
-        self.bounds = bounds
-        self.crs = crs
-        self.dtype = dtype
-        self.count = count
-
-    @classmethod
-    def load(cls, path: str) -> Image:
-        def _load_part(
-            bounds: BBox, dst_crs: CRS, height: int, width: int
-        ) -> ImageData:
-            with rasterio.open(path) as src:
-                return reader.part(
-                    src,
-                    bounds=bounds,
-                    height=height,
-                    width=width,
-                    dst_crs=dst_crs,
-                )
-
-        bounds, crs, dtype, count = read_raster_info(path)
-        return cls(_load_part, bounds=bounds, crs=crs, dtype=dtype, count=count)
-
-    @classmethod
-    def constant(cls, value: Union[float, int]) -> Image:
-        dtype = np.min_scalar_type(value)
-
-        def _constant_part(
-            bounds: BBox, dst_crs: CRS, height: int, width: int
-        ) -> ImageData:
-            ones = np.ones((1, height, width), dtype=dtype)
-            data = ones * value
-            mask = ones * 255
-            return ImageData(
-                data=data,
-                mask=mask,
-                bounds=BoundingBox(*bounds),
-                crs=dst_crs,
-                band_names=["CONSTANT"],
-            )
-
-        return cls(_constant_part, dtype=dtype, count=1)
-
-    def abs(self) -> Image:
-        def _part(*args):
-            img = self.part(*args)
-            img.data = np.abs(img.data)
-            return img
-
-        return Image(
-            lambda *args: _part(*args),
-            bounds=self.bounds,
-            crs=self.crs,
-            dtype=self.dtype,
-            count=self.count,
-        )
-
-    def __add__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__add__", other)
-
-    def __sub__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__sub__", other)
-
-    def __mul__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__mul__", other)
-
-    def __truediv__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__truediv__", other)
-
-    def __floordiv__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__floordiv__", other)
-
-    def __lt__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__lt__", other)
-
-    def __le__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__le__", other)
-
-    def __eq__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__eq__", other)
-
-    def __ne__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__ne__", other)
-
-    def __gt__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__gt__", other)
-
-    def __ge__(self, other: Union[Image, int, float]) -> Image:
-        return self._operator("__ge__", other)
-
-    def _operator(self, method_name, other: Union[Image, int, float]) -> Image:
-        other_img = other if isinstance(other, Image) else Image.constant(other)
-
-        def _part(other: Image, *args) -> ImageData:
-            img_data = self.part(*args)
-            other_img_data = other.part(*args)
-            new_img_data = copy(img_data)
-            new_img_data.data = getattr(img_data.data, method_name)(other_img_data.data)
-            new_img_data.mask = np.maximum(img_data.mask, other_img_data.mask)
-            return new_img_data
-
-        new_bounds, new_crs = bounds_union(
-            self.bounds, other_img.bounds, self.crs, other_img.crs
-        )
-
-        return Image(
-            lambda *args: _part(other_img, *args),
-            bounds=new_bounds,
-            crs=new_crs,
-            dtype=np.float64,
-            count=self.count,
-        )
 
 
 def eval_image(
