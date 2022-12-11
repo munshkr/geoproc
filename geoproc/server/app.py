@@ -13,9 +13,10 @@ from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.profiles import img_profiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .image import Image, ImageReader
-from .image import eval_image as _eval_image
-from .models import ExportRequest
+from geoproc.models import VisualizationParams
+from geoproc.server.image import Image, ImageReader
+from geoproc.server.image import eval_image as _eval_image
+from geoproc.server.models import ExportRequest
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
 
@@ -72,7 +73,7 @@ async def root():
 
 
 @app.post("/map")
-async def map(image_json: dict, request: Request):
+async def map(image_json: dict, vis_params: VisualizationParams, request: Request):
     new_uuid = str(uuid.uuid4())
     set_map(new_uuid, image_json)
 

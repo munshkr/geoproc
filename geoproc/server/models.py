@@ -2,7 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 from rio_tiler.constants import WGS84_CRS
-from rio_tiler.types import BBox
+
+from geoproc.server.types import BBox
 
 
 class ExportRequest(BaseModel):

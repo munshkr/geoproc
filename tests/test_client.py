@@ -27,4 +27,6 @@ def test_api_client_get_map(mocker):
 
     client.get_map(img)
 
-    httpx.post.assert_called_once_with(f"{client.url}/map", json=img.graph)
+    httpx.post.assert_called_once_with(
+        f"{client.url}/map", json={"image": img.graph, "vis_params": None}
+    )

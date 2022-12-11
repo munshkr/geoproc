@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Optional, Union
 
 from geoproc.types import CRS, BBox, CallGraph
+from geoproc.models import VisualizationParams
 
 
 class BaseImage(metaclass=ABCMeta):
@@ -143,11 +144,11 @@ class Image(BaseImage):
     def select(self, band_names_or_idx: list[Union[str, int]]) -> Image:
         return Image({"name": "select", "args": [self._graph, band_names_or_idx]})
 
-    def get_map(self, vis_params: dict = {}) -> dict:
+    def get_map(self, vis_params: dict[str, Any] = {}) -> dict:
         from .client import APIClient
 
         client = APIClient()
-        return client.get_map(self)
+        return client.get_map(self, vis_params=VisualizationParams(**vis_params))
 
     def export(
         self,

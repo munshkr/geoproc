@@ -4,14 +4,22 @@ import httpx
 
 from geoproc.image import Image
 from geoproc.types import BBox
+from geoproc.models import VisualizationParams
 
 
 class APIClient:
     def __init__(self, url: str = "http://localhost:8000"):
         self.url = url
 
-    def get_map(self, image: Image) -> dict[str, str]:
-        r = httpx.post(f"{self.url}/map", json=image.graph)
+    def get_map(
+        self,
+        image: Image,
+        vis_params: Optional[VisualizationParams] = None,
+    ) -> dict[str, str]:
+        r = httpx.post(
+            f"{self.url}/map",
+            json={"image": image.graph, "vis_params": vis_params},
+        )
         res = r.json()
         if r.is_error:
             raise RuntimeError(res["detail"])
