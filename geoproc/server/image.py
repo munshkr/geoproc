@@ -12,7 +12,6 @@ import rasterio.transform
 import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
-from pyproj import Transformer
 from rasterio.coords import BoundingBox
 from rasterio.warp import transform_bounds
 from rasterio.windows import Window
@@ -23,8 +22,6 @@ from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
-from shapely.geometry import box
-from shapely.ops import transform
 
 from geoproc.image import BaseImage
 from geoproc.server.types import PartCallable
@@ -103,17 +100,14 @@ class Image(BaseImage):
                 "Image is boundless, you must specify bounds when exporting"
             )
 
-        bbox = box(*bounds)
-
         # Reproject bounds to a projected CRS. If the output CRS is already
         # projected, use it, otherwise use Web Mercator (epsg:3857).
         # This is because scale units are expected to be in meters.
         proj_crs = crs if crs.is_projected else CRS.from_epsg(3857)
-        project = Transformer.from_crs(in_crs, proj_crs, always_xy=True).transform
-        proj_bbox = transform(project, bbox)
+        proj_bounds = transform_bounds(in_crs, proj_crs, *bounds)
 
         # Calculate affine transformation for scale and bounds
-        minx, miny, maxx, maxy = proj_bbox.bounds
+        minx, miny, maxx, maxy = proj_bounds
         proj_transform = rasterio.transform.from_origin(
             west=minx,
             north=maxy,
@@ -123,10 +117,7 @@ class Image(BaseImage):
 
         # Create a window to calculate width and height in pixels
         window = rasterio.windows.from_bounds(
-            left=minx,
-            bottom=miny,
-            right=maxx,
-            top=maxy,
+            *proj_bounds,
             transform=proj_transform,
         )
         width, height = round(window.width), round(window.height)
