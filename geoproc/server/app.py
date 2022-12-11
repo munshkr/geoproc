@@ -28,11 +28,11 @@ TILE_HEADERS = {"Cache-Control": "max-age=31536000, immutable"}
 
 def set_map(uuid: str, image_dict: dict[str, Any]) -> None:
     body = json.dumps(image_dict)
-    cache_redis.set(f"maps.{uuid}", body)
+    cache_redis.set(f"maps:{uuid}", body)
 
 
 def get_map(uuid: str) -> Optional[str]:
-    body = cache_redis.get(f"maps.{uuid}")
+    body = cache_redis.get(f"maps:{uuid}")
     if not body:
         return
     return body.decode()
