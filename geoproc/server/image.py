@@ -22,6 +22,7 @@ from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
+from tqdm import tqdm
 
 from geoproc.image import BaseImage
 from geoproc.server.types import PartCallable
@@ -68,6 +69,9 @@ class Image(BaseImage):
 
     @classmethod
     def load(cls, path: str) -> Image:
+        bounds, crs, dtype, count = read_raster_info(path)
+        band_names = [f"B{idx}" for idx in range(1, count + 1)]
+
         def _load_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
         ) -> ImageData:
@@ -80,8 +84,6 @@ class Image(BaseImage):
                     dst_crs=dst_crs,
                 )
 
-        bounds, crs, dtype, count = read_raster_info(path)
-        band_names = [f"B{idx}" for idx in range(1, count + 1)]
         return cls(
             _load_part,
             dtype=dtype,
@@ -110,6 +112,25 @@ class Image(BaseImage):
             )
 
         return cls(_constant_part, dtype=dtype, band_names=band_names)
+
+    def select(self, band_names: list[str]) -> Image:
+        invalid_names = [b for b in band_names if b not in self.band_names]
+        if invalid_names:
+            raise RuntimeError(f"Invalid band names: {invalid_names}")
+        indexes = [int(b[1:]) - 1 for b in band_names]
+
+        def _part(*args):
+            img = self.part(*args)
+            img.data = img.data[indexes]
+            return img
+
+        return Image(
+            _part,
+            bounds=self.bounds,
+            crs=self.crs,
+            dtype=self.dtype,
+            band_names=band_names,
+        )
 
     def export(
         self,
@@ -181,7 +202,7 @@ class Image(BaseImage):
                     )
                 )
 
-                for win, win_bounds in window_bounds:
+                for win, win_bounds in tqdm(window_bounds, ascii=True, desc=path):
                     image_data = src.part(
                         win_bounds,
                         win.height,

@@ -50,6 +50,10 @@ class BaseImage(metaclass=ABCMeta):
         ...
 
     @abstractmethod
+    def select(self, band_names_or_idx: list[Union[str, int]]) -> BaseImage:
+        ...
+
+    @abstractmethod
     def __abs__(self) -> BaseImage:
         ...
 
@@ -135,6 +139,9 @@ class Image(BaseImage):
     @classmethod
     def constant(cls, value: Union[int, float]) -> Image:
         return cls(cls._constant(value))
+
+    def select(self, band_names_or_idx: list[Union[str, int]]) -> Image:
+        return Image({"name": "select", "args": [self._graph, band_names_or_idx]})
 
     def get_map(self, vis_params: dict = {}) -> dict:
         from .client import APIClient
