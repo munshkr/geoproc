@@ -22,9 +22,9 @@ from shapely.ops import transform
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from tqdm import tqdm
 
-from geoproc.server.image import Image, ImageReader
-from geoproc.server.image import eval_image as _eval_image
-from geoproc.server.models import ExportRequest
+from .image import Image, ImageReader
+from .image import eval_image as _eval_image
+from .models import ExportRequest
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
 

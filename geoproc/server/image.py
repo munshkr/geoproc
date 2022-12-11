@@ -21,8 +21,6 @@ from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
 
-from geoproc.types import Bounds
-
 WINDOW_SIZE = 2**12
 
 
