@@ -16,15 +16,14 @@ from rasterio.crs import CRS
 from rasterio.warp import transform_bounds
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler.errors import TileOutsideBounds
+from rio_tiler.profiles import img_profiles
 from shapely.geometry import box
 from shapely.ops import transform
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from tqdm import tqdm
 
 from geoproc.server.image import Image, ImageReader
-from geoproc.server.image import export as _export
 from geoproc.server.image import image_eval as _image_eval
-from geoproc.server.image import tile as _tile
 from geoproc.server.models import ExportRequest
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
@@ -104,7 +103,7 @@ async def map(image_json: dict, request: Request):
     },
     description="Read COG and return a tile",
 )
-def tile(response: Response, id: str, z: int, x: int, y: int):
+def tile(id: str, z: int, x: int, y: int):
     """Handle tile requests."""
     image_json = get_map(id)
     if image_json is None:
@@ -112,9 +111,13 @@ def tile(response: Response, id: str, z: int, x: int, y: int):
     image = image_eval(image_json)
 
     try:
-        content = _tile(image, x=x, y=y, z=z)
+        with ImageReader(image) as src:
+            img = src.tile(x, y, z)
     except TileOutsideBounds:
         return Response(status_code=204, headers=TILE_HEADERS)
+
+    profile = img_profiles.get("png") or {}
+    content = img.render(img_format="PNG", **profile)
     return Response(content, media_type="image/png", headers=TILE_HEADERS)
 
 

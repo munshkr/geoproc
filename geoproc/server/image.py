@@ -12,7 +12,6 @@ import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
 from rasterio.coords import BoundingBox
-from rasterio.enums import Resampling
 from rasterio.warp import transform_bounds
 from rasterio.windows import Window
 from rio_tiler import reader
@@ -20,12 +19,10 @@ from rio_tiler.constants import CRS, WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
-from rio_tiler.profiles import img_profiles
 from rio_tiler.types import BBox
 
 from geoproc.types import Bounds
 
-MAX_MEMORY = 2**28
 WINDOW_SIZE = 2**12
 
 
@@ -150,17 +147,6 @@ class ImageWriter:
 
     def write(self, array: npt.NDArray, *, window: Optional[Window] = None) -> None:
         pass
-
-    def build_windows(
-        self,
-        *,
-        in_crs: str,
-        crs: str,
-        scale: int,
-        bounds: Bounds,
-        max_memory: int = 2**28,
-    ) -> Iterable[Window]:
-        yield Window()
 
 
 PartCallable = Callable[[BBox, CRS, int, int], ImageData]
@@ -321,31 +307,3 @@ def image_eval(
         image_eval(arg) if isinstance(arg, dict) else arg for arg in image_attr["args"]
     ]
     return method(*args)
-
-
-def export(
-    image: Image,
-    *,
-    path: str,
-    in_crs: str = "epsg:4326",
-    crs: str = "epsg:4326",
-    scale: int = 1000,
-    bounds: Bounds,
-) -> None:
-    with ImageReader(image) as src:
-        with ImageWriter(image, path) as dst:
-            for window in dst.build_windows(
-                in_crs=in_crs,
-                crs=crs,
-                scale=scale,
-                bounds=bounds,
-                max_memory=MAX_MEMORY,
-            ):
-                img = src.read(window)
-                dst.write(img, window=window)
-
-
-def tile(image: Image, *, x: int, y: int, z: int):
-    with ImageReader(image) as src:
-        img = src.tile(x, y, z)
-    return img.render(img_format="PNG", **img_profiles.get("png"))  # type: ignore
