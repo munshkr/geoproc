@@ -89,6 +89,7 @@ async def info(image_json: dict, request: Request):
     image = _eval_image(image_json)
     info = image.info.copy()
     info["crs"] = str(info["crs"])
+    info["dtype"] = str(info["dtype"])
     return {"detail": info}
 
 

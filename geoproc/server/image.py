@@ -34,14 +34,14 @@ class Image(BaseImage):
         self,
         part: PartCallable,
         *,
+        dtype: npt.DTypeLike,
         bounds: Optional[BBox] = None,
         crs: CRS = WGS84_CRS,
-        dtype: npt.DTypeLike,
-        count: int = 1,
+        band_names: list[str],
     ):
         self.part = part
         self.dtype = dtype
-        self.count = count
+        self._band_names = band_names
         self._bounds = bounds
         self._crs = crs
 
@@ -54,12 +54,16 @@ class Image(BaseImage):
         return self._bounds
 
     @property
+    def band_names(self) -> list[str]:
+        return self._band_names
+
+    @property
     def info(self) -> dict[str, Any]:
         return {
             "crs": self._crs,
             "bounds": self._bounds,
+            "band_names": self._band_names,
             "dtype": self.dtype,
-            "count": self.count,
         }
 
     @classmethod
@@ -77,11 +81,19 @@ class Image(BaseImage):
                 )
 
         bounds, crs, dtype, count = read_raster_info(path)
-        return cls(_load_part, bounds=bounds, crs=crs, dtype=dtype, count=count)
+        band_names = [f"B{idx}" for idx in range(1, count + 1)]
+        return cls(
+            _load_part,
+            dtype=dtype,
+            bounds=bounds,
+            crs=crs,
+            band_names=band_names,
+        )
 
     @classmethod
     def constant(cls, value: Union[float, int]) -> Image:
         dtype = np.min_scalar_type(value)
+        band_names = ["CONSTANT"]
 
         def _constant_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
@@ -94,10 +106,10 @@ class Image(BaseImage):
                 mask=mask,
                 bounds=BoundingBox(*bounds),
                 crs=dst_crs,
-                band_names=["CONSTANT"],
+                band_names=band_names,
             )
 
-        return cls(_constant_part, dtype=dtype, count=1)
+        return cls(_constant_part, dtype=dtype, band_names=band_names)
 
     def export(
         self,
@@ -191,7 +203,7 @@ class Image(BaseImage):
             bounds=self.bounds,
             crs=self.crs,
             dtype=self.dtype,
-            count=self.count,
+            band_names=self.band_names,
         )
 
     def __add__(self, other: Union[Image, int, float]) -> Image:
@@ -247,7 +259,7 @@ class Image(BaseImage):
             bounds=new_bounds,
             crs=new_crs,
             dtype=np.float64,
-            count=self.count,
+            band_names=self.band_names,
         )
 
 
@@ -302,7 +314,7 @@ class ImageReader(BaseReader):
             for j in range(0, width, w):
                 real_h = min(h, abs(height - i))
                 real_w = min(w, abs(width - j))
-                win = Window(j, i, real_w, real_h)
+                win = Window(j, i, real_w, real_h)  # type: ignore
                 win_bounds = rasterio.windows.bounds(
                     window=win, transform=out_transform
                 )
@@ -390,10 +402,8 @@ def bounds_union(
         return a, a_crs
     if b_crs != a_crs:
         b = transform_bounds(b_crs, a_crs, *b)
-    minx = min(a[0], b[0])
-    miny = min(a[1], b[1])
-    maxx = max(a[2], b[2])
-    maxy = max(a[3], b[3])
+    minx, miny = min(a[0], b[0]), min(a[1], b[1])  # type: ignore
+    maxx, maxy = max(a[2], b[2]), max(a[3], b[3])  # type: ignore
     return (minx, miny, maxx, maxy), a_crs
 
 

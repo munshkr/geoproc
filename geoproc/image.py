@@ -19,6 +19,11 @@ class BaseImage(metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def band_names(self) -> list[str]:
+        ...
+
+    @property
+    @abstractmethod
     def info(self) -> dict[str, Any]:
         ...
 
@@ -92,6 +97,14 @@ class BaseImage(metaclass=ABCMeta):
     def __gt__(self, other: Union[int, float, BaseImage]) -> BaseImage:
         ...
 
+    @property
+    def count(self) -> int:
+        return len(self.band_names)
+
+    @property
+    def has_bounds(self):
+        return self.bounds is not None
+
 
 class Image(BaseImage):
     def __init__(self, arg: Union[str, int, CallGraph]):
@@ -110,6 +123,10 @@ class Image(BaseImage):
     @property
     def bounds(self) -> Optional[BBox]:
         return self.info.get("bounds")
+
+    @property
+    def band_names(self) -> list[str]:
+        return self.info.get("band_names", [])
 
     @classmethod
     def load(cls, url: str) -> Image:
