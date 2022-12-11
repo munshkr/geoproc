@@ -1,13 +1,27 @@
 from __future__ import annotations
 
-import abc
-from abc import ABC, abstractmethod
-from typing import Optional, Union
+from abc import ABCMeta, abstractmethod
+from typing import Any, Optional, Union
 
-from geoproc.types import Bounds
+from geoproc.types import CRS, BBox, CallGraph
 
 
-class BaseImage(ABC):
+class BaseImage(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def crs(self) -> CRS:
+        ...
+
+    @property
+    @abstractmethod
+    def bounds(self) -> Optional[BBox]:
+        ...
+
+    @property
+    @abstractmethod
+    def info(self) -> dict[str, Any]:
+        ...
+
     @classmethod
     @abstractmethod
     def load(cls, url: str) -> BaseImage:
@@ -23,7 +37,7 @@ class BaseImage(ABC):
         self,
         path: str,
         *,
-        bounds: Optional[Bounds] = None,
+        bounds: Optional[BBox] = None,
         scale: float = 1000,
         in_crs: str = "epsg:4326",
         crs: str = "epsg:4326",
@@ -80,7 +94,8 @@ class BaseImage(ABC):
 
 
 class Image(BaseImage):
-    def __init__(self, arg: Union[str, int, dict]):
+    def __init__(self, arg: Union[str, int, CallGraph]):
+        self._info = None
         if isinstance(arg, str):
             self._graph = self._load(arg)
         elif isinstance(arg, int) or isinstance(arg, float):
@@ -89,8 +104,12 @@ class Image(BaseImage):
             self._graph = arg
 
     @property
-    def graph(self) -> dict:
-        return self._graph.copy()
+    def crs(self) -> CRS:
+        return self.info.get("crs", "epsg:4326")
+
+    @property
+    def bounds(self) -> Optional[BBox]:
+        return self.info.get("bounds")
 
     @classmethod
     def load(cls, url: str) -> Image:
@@ -110,7 +129,7 @@ class Image(BaseImage):
         self,
         path: str,
         *,
-        bounds: Optional[Bounds] = None,
+        bounds: Optional[BBox] = None,
         scale: float = 1000,
         in_crs: str = "epsg:4326",
         crs: str = "epsg:4326",
@@ -174,10 +193,23 @@ class Image(BaseImage):
         other = Image.constant(other) if not isinstance(other, Image) else other
         return Image({"name": "__gt__", "args": [self._graph, other._graph]})
 
+    @property
+    def graph(self) -> CallGraph:
+        return self._graph.copy()
+
     @staticmethod
-    def _load(url: str) -> dict:
+    def _load(url: str) -> CallGraph:
         return {"name": "load", "args": [url]}
 
     @staticmethod
-    def _constant(value: Union[int, float]) -> dict:
+    def _constant(value: Union[int, float]) -> CallGraph:
         return {"name": "constant", "args": [value]}
+
+    @property
+    def info(self) -> dict[str, Any]:
+        if not self._info:
+            from .client import APIClient
+
+            client = APIClient()
+            self._info = client.get_info(self)
+        return self._info

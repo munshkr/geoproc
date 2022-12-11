@@ -40,10 +40,27 @@ class Image(BaseImage):
         count: int = 1,
     ):
         self.part = part
-        self.bounds = bounds
-        self.crs = crs
         self.dtype = dtype
         self.count = count
+        self._bounds = bounds
+        self._crs = crs
+
+    @property
+    def crs(self) -> CRS:
+        return self._crs
+
+    @property
+    def bounds(self) -> Optional[BBox]:
+        return self._bounds
+
+    @property
+    def info(self) -> dict[str, Any]:
+        return {
+            "crs": self._crs,
+            "bounds": self._bounds,
+            "dtype": self.dtype,
+            "count": self.count,
+        }
 
     @classmethod
     def load(cls, path: str) -> Image:
@@ -107,7 +124,7 @@ class Image(BaseImage):
         proj_bounds = transform_bounds(in_crs, proj_crs, *bounds)
 
         # Calculate affine transformation for scale and bounds
-        minx, miny, maxx, maxy = proj_bounds
+        minx, _, _, maxy = proj_bounds
         proj_transform = rasterio.transform.from_origin(
             west=minx,
             north=maxy,

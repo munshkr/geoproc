@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Optional, Any
 
 import httpx
 
 from geoproc.image import Image
-from geoproc.types import Bounds
+from geoproc.types import BBox
 
 
 class APIClient:
@@ -17,6 +17,13 @@ class APIClient:
             raise RuntimeError(res["detail"])
         return res["detail"]
 
+    def get_info(self, image: Image) -> dict[str, Any]:
+        r = httpx.post(f"{self.url}/info", json=image.graph)
+        res = r.json()
+        if r.is_error:
+            raise RuntimeError(res["detail"])
+        return res["detail"]
+
     def export(
         self,
         image: Image,
@@ -24,7 +31,7 @@ class APIClient:
         scale: float,
         in_crs: str,
         crs: str,
-        bounds: Optional[Bounds] = None,
+        bounds: Optional[BBox] = None,
         path: str,
     ) -> dict:
         data = {

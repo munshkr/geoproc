@@ -1,2 +1,3 @@
 CallGraph = dict
-Bounds = tuple[float, float, float, float]
+BBox = tuple[float, float, float, float]
+CRS = str

@@ -84,6 +84,14 @@ async def map(image_json: dict, request: Request):
     }
 
 
+@app.post("/info")
+async def info(image_json: dict, request: Request):
+    image = _eval_image(image_json)
+    info = image.info.copy()
+    info["crs"] = str(info["crs"])
+    return {"detail": info}
+
+
 @app.get(
     r"/tiles/{id}/{z}/{x}/{y}.png",
     responses={
