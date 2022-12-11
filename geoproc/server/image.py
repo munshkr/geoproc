@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from copy import copy
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
@@ -11,22 +12,27 @@ import rasterio.transform
 import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
+from pyproj import Transformer
 from rasterio.coords import BoundingBox
 from rasterio.warp import transform_bounds
 from rasterio.windows import Window
+from rio_cogeo.profiles import cog_profiles
 from rio_tiler import reader
 from rio_tiler.constants import CRS, WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
+from shapely.geometry import box
+from shapely.ops import transform
 
+from geoproc.image import BaseImage
 from geoproc.server.types import PartCallable
 
 WINDOW_SIZE = 2**12
 
 
-class Image:
+class Image(BaseImage):
     def __init__(
         self,
         part: PartCallable,
@@ -79,7 +85,94 @@ class Image:
 
         return cls(_constant_part, dtype=dtype, count=1)
 
-    def abs(self) -> Image:
+    def export(
+        self,
+        path: str,
+        *,
+        bounds: Optional[BBox] = None,
+        scale: float = 1000,
+        in_crs: CRS = WGS84_CRS,
+        crs: CRS = WGS84_CRS,
+    ):
+        if not bounds:
+            in_crs = self.crs
+            bounds = self.bounds
+
+        if not bounds:
+            raise RuntimeError(
+                "Image is boundless, you must specify bounds when exporting"
+            )
+
+        bbox = box(*bounds)
+
+        # Reproject bounds to a projected CRS. If the output CRS is already
+        # projected, use it, otherwise use Web Mercator (epsg:3857).
+        # This is because scale units are expected to be in meters.
+        proj_crs = crs if crs.is_projected else CRS.from_epsg(3857)
+        project = Transformer.from_crs(in_crs, proj_crs, always_xy=True).transform
+        proj_bbox = transform(project, bbox)
+
+        # Calculate affine transformation for scale and bounds
+        minx, miny, maxx, maxy = proj_bbox.bounds
+        proj_transform = rasterio.transform.from_origin(
+            west=minx,
+            north=maxy,
+            xsize=scale,
+            ysize=scale,
+        )
+
+        # Create a window to calculate width and height in pixels
+        window = rasterio.windows.from_bounds(
+            left=minx,
+            bottom=miny,
+            right=maxx,
+            top=maxy,
+            transform=proj_transform,
+        )
+        width, height = round(window.width), round(window.height)
+
+        # Reproject bounds from in_crs to dst_crs (if they are different) and get
+        # transform from bounds
+        out_bounds = transform_bounds(in_crs, crs, *bounds)
+        out_transform = rasterio.transform.from_bounds(
+            *out_bounds, width=width, height=height
+        )
+
+        # TODO: If it's too large, retile into multiple COG files
+        with ImageReader(self) as src:
+            profile = cog_profiles["deflate"].copy()
+            profile.update(
+                height=height,
+                width=width,
+                dtype=src.dtype,
+                count=src.count,
+                crs=crs,
+                transform=out_transform,
+            )
+
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            with rasterio.open(path, "w", **profile) as dst:
+                window_bounds = list(
+                    src.window_and_bounds(
+                        bounds=bounds,
+                        bounds_crs=in_crs,
+                        crs=crs,
+                        scale=scale,
+                    )
+                )
+
+                for win, win_bounds in window_bounds:
+                    image_data = src.part(
+                        win_bounds,
+                        win.height,
+                        win.width,
+                        bounds_crs=crs,
+                        dst_crs=crs,
+                    )
+                    dst.write(image_data.data, window=win)
+                    dst.write_mask(image_data.mask, window=win)
+
+    def __abs__(self) -> Image:
         def _part(*args):
             img = self.part(*args)
             img.data = np.abs(img.data)
@@ -174,7 +267,7 @@ class ImageReader(BaseReader):
         bounds: BBox,
         bounds_crs: CRS,
         crs: CRS,
-        scale: int,
+        scale: float,
         window_size: int = WINDOW_SIZE,
     ) -> Iterable[Tuple[Window, BBox]]:
         proj_crs = crs if crs.is_projected else CRS.from_epsg(3857)

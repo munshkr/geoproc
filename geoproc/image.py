@@ -1,11 +1,85 @@
 from __future__ import annotations
 
+import abc
+from abc import ABC, abstractmethod
 from typing import Optional, Union
 
 from geoproc.types import Bounds
 
 
-class Image:
+class BaseImage(ABC):
+    @classmethod
+    @abstractmethod
+    def load(cls, url: str) -> BaseImage:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def constant(cls, value: Union[int, float]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def export(
+        self,
+        path: str,
+        *,
+        bounds: Optional[Bounds] = None,
+        scale: float = 1000,
+        in_crs: str = "epsg:4326",
+        crs: str = "epsg:4326",
+    ):
+        ...
+
+    @abstractmethod
+    def __abs__(self) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __add__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __sub__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __mul__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __truediv__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __floordiv__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __lt__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __le__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __eq__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __ne__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __ge__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+    @abstractmethod
+    def __gt__(self, other: Union[int, float, BaseImage]) -> BaseImage:
+        ...
+
+
+class Image(BaseImage):
     def __init__(self, arg: Union[str, int, dict]):
         if isinstance(arg, str):
             self._graph = self._load(arg)
@@ -19,7 +93,7 @@ class Image:
         return self._graph.copy()
 
     @classmethod
-    def load(cls, url: str) -> "Image":
+    def load(cls, url: str) -> Image:
         return cls(cls._load(url))
 
     @classmethod
