@@ -16,9 +16,10 @@ class APIClient:
         image: Image,
         vis_params: Optional[VisualizationParams] = None,
     ) -> dict[str, str]:
+        vis_dict = vis_params and vis_params.dict()
         r = httpx.post(
             f"{self.url}/map",
-            json={"image": image.graph, "vis_params": vis_params},
+            json={"image_graph": image.graph, "vis_params": vis_dict},
         )
         res = r.json()
         if r.is_error:

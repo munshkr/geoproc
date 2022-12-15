@@ -73,9 +73,9 @@ async def root():
 
 
 @app.post("/map")
-async def map(image_json: dict, vis_params: VisualizationParams, request: Request):
+async def map(image_graph: dict, vis_params: VisualizationParams, request: Request):
     new_uuid = str(uuid.uuid4())
-    set_map(new_uuid, image_json)
+    set_map(new_uuid, image_graph)
 
     return {
         "detail": {
