@@ -31,11 +31,24 @@ def set_map(uuid: str, image_dict: dict[str, Any]) -> None:
     cache_redis.set(f"maps:{uuid}", body)
 
 
+def set_vis_params(uuid: str, vis_params: VisualizationParams) -> None:
+    body = json.dumps(vis_params.dict())
+    cache_redis.set(f"vis_params:{uuid}", body)
+
+
 def get_map(uuid: str) -> Optional[str]:
     body = cache_redis.get(f"maps:{uuid}")
     if not body:
         return
     return body.decode()
+
+
+def get_vis_params(uuid: str) -> Optional[VisualizationParams]:
+    body = cache_redis.get(f"vis_params:{uuid}")
+    if not body:
+        return
+    body_dict = json.loads(body)
+    return VisualizationParams(**body_dict)
 
 
 @functools.lru_cache(maxsize=64, typed=False)
@@ -73,9 +86,14 @@ async def root():
 
 
 @app.post("/map")
-async def map(image_graph: dict, vis_params: VisualizationParams, request: Request):
+async def map(
+    image_graph: dict[str, Any],
+    vis_params: VisualizationParams,
+    request: Request,
+):
     new_uuid = str(uuid.uuid4())
     set_map(new_uuid, image_graph)
+    set_vis_params(new_uuid, vis_params)
 
     return {
         "detail": {
@@ -110,15 +128,21 @@ def tile(id: str, z: int, x: int, y: int):
     if image_json is None:
         raise HTTPException(status_code=404, detail=f"Map id {id} not found")
 
+    vis_params = get_vis_params(id) or VisualizationParams()
+
     image = eval_image(image_json)
     try:
         with ImageReader(image) as src:
-            data = src.tile(x, y, z)
+            img = src.tile(x, y, z)
+
+            # Select bands
+            indexes = [img.band_names.index(b) for b in vis_params.bands]
+            img.data = img.data[indexes]
     except TileOutsideBounds:
         return Response(status_code=204, headers=TILE_HEADERS)
 
     profile = img_profiles.get("png") or {}
-    content = data.render(img_format="PNG", **profile)
+    content = img.render(img_format="PNG", **profile)
     return Response(content, media_type="image/png", headers=TILE_HEADERS)
 
 
