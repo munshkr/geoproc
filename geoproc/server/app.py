@@ -157,6 +157,9 @@ def tile(id: str, z: int, x: int, y: int):
                 out_range = expand_scale_range((0, 255), len(indexes))
                 img.rescale(in_range=in_range, out_range=out_range)
 
+            if vis_params.opacity < 1.0:
+                img.mask *= round((1 - vis_params.opacity) * 255)
+
     except TileOutsideBounds:
         return Response(status_code=204, headers=TILE_HEADERS)
 

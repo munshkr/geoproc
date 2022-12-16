@@ -18,3 +18,9 @@ class VisualizationParams(BaseModel):
         if len(v) != 1 and len(v) != 3:
             raise ValueError(f"must contain either 1 or 3 band names, but has {len(v)}")
         return [n.lower() for n in v]
+
+    @validator("opacity")
+    def opacity_is_between_zero_and_one(cls, v):
+        if v < 0.0 or v > 1.0:
+            raise ValueError(f"must be between 0.0 and 1.0")
+        return v
