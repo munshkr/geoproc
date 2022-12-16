@@ -7,6 +7,8 @@ An open source toolkit for processing geospatial imagery with ease
 [![Issues](https://img.shields.io/github/issues-closed/munshkr/geoproc)](https://github.com/munshkr/geoproc/issues)
 [![License](https://img.shields.io/github/license/munshkr/geoproc)](https://github.com/munshkr/geoproc/blob/main/LICENSE)
 
+**This is mostly a proof of concept and is rapidly changing. Not suited for production!**
+
 ## Features
 
 * Work with multiple datasets in a straightforward and consistent way
