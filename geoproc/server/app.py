@@ -17,6 +17,7 @@ from geoproc.models import VisualizationParams
 from geoproc.server.image import Image, ImageReader
 from geoproc.server.image import eval_image as _eval_image
 from geoproc.server.models import ExportRequest
+from geoproc.types import SingleOrRGBList, Number
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
 
@@ -49,6 +50,15 @@ def get_vis_params(uuid: str) -> Optional[VisualizationParams]:
         return
     body_dict = json.loads(body)
     return VisualizationParams(**body_dict)
+
+
+def expand_scale_range(
+    min_max: tuple[SingleOrRGBList, SingleOrRGBList], count: int
+) -> list[tuple[Number, Number]]:
+    min_v, max_v = min_max
+    min_v = [min_v] * count if not isinstance(min_v, tuple) else min_v
+    max_v = [max_v] * count if not isinstance(max_v, tuple) else max_v
+    return list(zip(min_v, max_v))[:count]
 
 
 @functools.lru_cache(maxsize=64, typed=False)
@@ -138,6 +148,15 @@ def tile(id: str, z: int, x: int, y: int):
             # Select bands
             indexes = [img.band_names.index(b) for b in vis_params.bands]
             img.data = img.data[indexes]
+
+            # Rescale using min and max
+            if vis_params.min is not None and vis_params.max is not None:
+                in_range = expand_scale_range(
+                    (vis_params.min, vis_params.max), len(indexes)
+                )
+                out_range = expand_scale_range((0, 255), len(indexes))
+                img.rescale(in_range=in_range, out_range=out_range)
+
     except TileOutsideBounds:
         return Response(status_code=204, headers=TILE_HEADERS)
 
