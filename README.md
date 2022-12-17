@@ -24,6 +24,8 @@ Run `make run` to start development API server.
 Run `poetry run pytest` to run tests. You can also do `poetry run ptw -- -v` to
 watch for files and run tests automatically on changes.
 
+Run `make docs` to start Sphinx autobuild server.
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at the [issues
