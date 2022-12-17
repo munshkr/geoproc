@@ -20,6 +20,11 @@ class BaseImage(metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def map_bounds(self) -> Optional[BBox]:
+        ...
+
+    @property
+    @abstractmethod
     def band_names(self) -> list[str]:
         ...
 
@@ -128,6 +133,10 @@ class Image(BaseImage):
     @property
     def bounds(self) -> Optional[BBox]:
         return self.info.get("bounds")
+
+    @property
+    def map_bounds(self) -> Optional[BBox]:
+        return self.info.get("map_bounds")
 
     @property
     def band_names(self) -> list[str]:

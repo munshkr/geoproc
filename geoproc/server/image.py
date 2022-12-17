@@ -44,6 +44,7 @@ class Image(BaseImage):
         self.dtype = dtype
         self._band_names = band_names
         self._bounds = bounds
+        self._map_bounds = bounds and transform_bounds(crs, WGS84_CRS, *bounds)
         self._crs = crs
 
     @property
@@ -55,6 +56,10 @@ class Image(BaseImage):
         return self._bounds
 
     @property
+    def map_bounds(self) -> Optional[BBox]:
+        return self._map_bounds
+
+    @property
     def band_names(self) -> list[str]:
         return self._band_names
 
@@ -63,6 +68,7 @@ class Image(BaseImage):
         return {
             "crs": self._crs,
             "bounds": self._bounds,
+            "map_bounds": self._map_bounds,
             "band_names": self._band_names,
             "dtype": self.dtype,
         }
