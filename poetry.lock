@@ -726,6 +726,18 @@ docs = ["myst-parser", "sphinxcontrib-github-alt", "traitlets"]
 test = ["ipykernel", "pre-commit", "pytest", "pytest-cov", "pytest-timeout"]
 
 [[package]]
+name = "livereload"
+version = "2.6.3"
+description = "Python LiveReload is an awesome tool for web developers"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+six = "*"
+tornado = {version = "*", markers = "python_version > \"2.7\""}
+
+[[package]]
 name = "markdown-it-py"
 version = "2.1.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -1484,6 +1496,22 @@ lint = ["flake8 (>=3.5.0)", "flake8-comprehensions", "flake8-bugbear", "flake8-s
 test = ["pytest (>=4.6)", "html5lib", "typed-ast", "cython"]
 
 [[package]]
+name = "sphinx-autobuild"
+version = "2021.3.14"
+description = "Rebuild Sphinx documentation on changes, with live-reload in the browser."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+colorama = "*"
+livereload = "*"
+sphinx = "*"
+
+[package.extras]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
 name = "sphinx-rtd-theme"
 version = "1.1.1"
 description = "Read the Docs theme for Sphinx"
@@ -1799,7 +1827,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "349764b89bfe0aa95d32ed08bad2f1c0492828f12a58a643cd16f83312a67a80"
+content-hash = "5769b486169cfaa2d8a6dd1b2c8719822295a33512020f2f5205131242f3c642"
 
 [metadata.files]
 affine = []
@@ -1857,6 +1885,7 @@ jsonschema = []
 jupyter-cache = []
 jupyter-client = []
 jupyter-core = []
+livereload = []
 markdown-it-py = []
 markupsafe = []
 matplotlib-inline = []
@@ -1914,6 +1943,7 @@ sniffio = []
 snowballstemmer = []
 snuggs = []
 sphinx = []
+sphinx-autobuild = []
 sphinx-rtd-theme = []
 sphinxcontrib-applehelp = []
 sphinxcontrib-devhelp = []
