@@ -146,8 +146,11 @@ def tile(id: str, z: int, x: int, y: int):
             img = src.tile(x, y, z)
 
             # Select bands
-            indexes = [img.band_names.index(b) for b in vis_params.bands]
-            img.data = img.data[indexes]
+            if vis_params.bands:
+                indexes = [img.band_names.index(b) for b in vis_params.bands]
+                img.data = img.data[indexes]
+            else:
+                indexes = list(range(len(img.band_names)))
 
             # Rescale using min and max
             if vis_params.min is not None and vis_params.max is not None:
