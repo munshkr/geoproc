@@ -11,6 +11,9 @@ An open source toolkit for processing geospatial imagery with ease
 
 ## Features
 
+* Uses [rio-tiler](https://cogeotiff.github.io/rio-tiler/) and 
+  [COGs](https://www.cogeo.org/) for efficiently reading and writing on 
+  demand.
 * Work with multiple datasets in a straightforward and consistent way
 * Make it easy to manipulate images (band concatenation, resampling,
   reprojecting, clipping, vectorization and rasterization, etc.)
