@@ -23,11 +23,32 @@ from rio_tiler.io.base import BaseReader
 from rio_tiler.models import BandStatistics, ImageData, Info, PointData
 from rio_tiler.types import BBox
 from tqdm import tqdm
+import functools
 
 from geoproc.image import BaseImage
 from geoproc.server.types import PartCallable
 
 WINDOW_SIZE = 2**12
+
+# data_cache = {}
+
+
+# @functools.cache
+# def reader_part(dataset, *, bounds, height, width, dst_crs):
+#     key = f"{dataset.name}:{bounds}:{height}:{width}:{dst_crs}"
+#     if key not in data_cache:
+#         print("reader_part", key)
+#         data = reader.part(
+#             dataset,
+#             bounds=bounds,
+#             height=height,
+#             width=width,
+#             dst_crs=dst_crs,
+#         )
+#         data_cache[key] = data
+#     else:
+#         print("reusing")
+#     return data_cache[key]
 
 
 class Image(BaseImage):

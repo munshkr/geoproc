@@ -17,7 +17,7 @@ from geoproc.models import VisualizationParams
 from geoproc.server.image import Image, ImageReader
 from geoproc.server.image import eval_image as _eval_image
 from geoproc.server.models import ExportRequest
-from geoproc.types import SingleOrRGBList, Number
+from geoproc.types import Number, SingleOrRGBList
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
 
@@ -143,6 +143,15 @@ def tile(id: str, z: int, x: int, y: int):
     image = eval_image(image_json)
     try:
         with ImageReader(image) as src:
+            print(f"[{id} {x} {y} {z}] reading tile")
+
+            # def _tile(*args):
+            #     return src.tile(*args)
+
+            # loop = asyncio.get_running_loop()
+            # with concurrent.futures.ProcessPoolExecutor() as pool:
+            #     img = await loop.run_in_executor(pool, partial(_tile, x, y, z))
+
             img = src.tile(x, y, z)
 
             # Select bands
@@ -167,6 +176,7 @@ def tile(id: str, z: int, x: int, y: int):
         return Response(status_code=204, headers=TILE_HEADERS)
 
     profile = img_profiles.get("png") or {}
+    print(f"[{id} {x} {y} {z}] DONE")
     content = img.render(img_format="PNG", **profile)
     return Response(content, media_type="image/png", headers=TILE_HEADERS)
 
