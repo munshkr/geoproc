@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from copy import copy
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
@@ -13,7 +14,8 @@ import rasterio.windows
 from morecantile.commons import Tile
 from morecantile.models import TileMatrixSet
 from rasterio.coords import BoundingBox
-from rasterio.warp import transform_bounds
+from rasterio.rio.overview import get_maximum_overview_level
+from rasterio.warp import calculate_default_transform, transform_bounds
 from rasterio.windows import Window
 from rio_cogeo.profiles import cog_profiles
 from rio_tiler import reader
@@ -39,6 +41,8 @@ class Image(BaseImage):
         bounds: Optional[BBox] = None,
         crs: CRS = WGS84_CRS,
         band_names: list[str],
+        min_zoom: Optional[int] = None,
+        max_zoom: Optional[int] = None,
     ):
         self.part = part
         self.dtype = dtype
@@ -46,6 +50,8 @@ class Image(BaseImage):
         self._bounds = bounds
         self._map_bounds = bounds and transform_bounds(crs, WGS84_CRS, *bounds)
         self._crs = crs
+        self._min_zoom = min_zoom
+        self._max_zoom = max_zoom
 
     @property
     def crs(self) -> CRS:
@@ -64,6 +70,14 @@ class Image(BaseImage):
         return self._band_names
 
     @property
+    def min_zoom(self) -> Optional[int]:
+        return self._min_zoom
+
+    @property
+    def max_zoom(self) -> Optional[int]:
+        return self._max_zoom
+
+    @property
     def info(self) -> dict[str, Any]:
         return {
             "crs": self._crs,
@@ -71,12 +85,15 @@ class Image(BaseImage):
             "map_bounds": self._map_bounds,
             "band_names": self._band_names,
             "dtype": self.dtype,
+            "min_zoom": self._min_zoom,
+            "max_zoom": self._max_zoom,
         }
 
     @classmethod
     def load(cls, path: str) -> Image:
-        bounds, crs, dtype, count = read_raster_info(path)
+        bounds, crs, dtype, count = _read_raster_info(path)
         band_names = [f"B{idx}" for idx in range(1, count + 1)]
+        min_zoom, max_zoom = _get_min_max_zoom(path)
 
         def _load_part(
             bounds: BBox, dst_crs: CRS, height: int, width: int
@@ -96,6 +113,8 @@ class Image(BaseImage):
             bounds=bounds,
             crs=crs,
             band_names=band_names,
+            min_zoom=min_zoom,
+            max_zoom=max_zoom,
         )
 
     @classmethod
@@ -136,6 +155,8 @@ class Image(BaseImage):
             crs=self.crs,
             dtype=self.dtype,
             band_names=band_names,
+            min_zoom=self.min_zoom,
+            max_zoom=self.max_zoom,
         )
 
     def export(
@@ -231,6 +252,8 @@ class Image(BaseImage):
             crs=self.crs,
             dtype=self.dtype,
             band_names=self.band_names,
+            min_zoom=self.min_zoom,
+            max_zoom=self.max_zoom,
         )
 
     def __add__(self, other: Union[Image, int, float]) -> Image:
@@ -287,6 +310,8 @@ class Image(BaseImage):
             crs=new_crs,
             dtype=np.float64,
             band_names=self.band_names,
+            min_zoom=self.min_zoom,
+            max_zoom=self.max_zoom,
         )
 
 
@@ -413,9 +438,89 @@ class ImageWriter:
         pass
 
 
-def read_raster_info(path: str) -> Tuple[BBox, CRS, npt.DTypeLike, int]:
+def _read_raster_info(path: str) -> Tuple[BBox, CRS, npt.DTypeLike, int]:
     with rasterio.open(path) as src:
         return (src.bounds, src.crs, src.profile["dtype"], src.count)
+
+
+def _dst_geom_in_tms_crs(path: str):
+    """Return dataset info in TMS projection."""
+    tms = WEB_MERCATOR_TMS
+
+    with rasterio.open(path) as src:
+        if src.crs != tms.rasterio_crs:
+            dst_affine, w, h = calculate_default_transform(
+                src.crs,
+                tms.rasterio_crs,
+                src.width,
+                src.height,
+                *src.bounds,
+            )
+        else:
+            dst_affine = list(src.transform)
+            w = src.width
+            h = src.height
+
+        return dst_affine, w, h
+
+
+def _get_minzoom(path: str, *, tms: TileMatrixSet = WEB_MERCATOR_TMS) -> int:
+    # We assume the TMS tilesize to be constant over all matrices
+    # ref: https://github.com/OSGeo/gdal/blob/dc38aa64d779ecc45e3cd15b1817b83216cf96b8/gdal/frmts/gtiff/cogdriver.cpp#L274
+    tilesize = tms.tileMatrix[0].tileWidth
+
+    try:
+        dst_affine, w, h = _dst_geom_in_tms_crs(path)
+
+        # The minzoom is defined by the resolution of the maximum theoretical overview level
+        # We assume `tilesize`` is the smallest overview size
+        overview_level = get_maximum_overview_level(w, h, minsize=tilesize)
+
+        # Get the resolution of the overview
+        resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
+        ovr_resolution = resolution * (2**overview_level)
+
+        # Find what TMS matrix match the overview resolution
+        _minzoom = tms.zoom_for_res(ovr_resolution)
+
+    except:  # noqa
+        # if we can't get max zoom from the dataset we default to TMS maxzoom
+        warnings.warn(
+            "Cannot determine minzoom based on dataset information, will default to TMS minzoom.",
+            UserWarning,
+        )
+        _minzoom = tms.minzoom
+
+    return _minzoom
+
+
+def _get_maxzoom(path: str, *, tms: TileMatrixSet = WEB_MERCATOR_TMS) -> int:
+    """Define dataset maximum zoom level."""
+    try:
+        dst_affine, _, _ = _dst_geom_in_tms_crs(path)
+
+        # The maxzoom is defined by finding the minimum difference between
+        # the raster resolution and the zoom level resolution
+        resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
+        _maxzoom = tms.zoom_for_res(resolution)
+
+    except:  # noqa
+        # if we can't get min/max zoom from the dataset we default to TMS maxzoom
+        warnings.warn(
+            "Cannot determine maxzoom based on dataset information, will default to TMS maxzoom.",
+            UserWarning,
+        )
+        _maxzoom = tms.maxzoom
+
+    return _maxzoom
+
+
+def _get_min_max_zoom(
+    path: str, tms: TileMatrixSet = WEB_MERCATOR_TMS
+) -> Tuple[int, int]:
+    _minzoom = _get_minzoom(path, tms=tms)
+    _maxzoom = _get_maxzoom(path, tms=tms)
+    return (_minzoom, _maxzoom)
 
 
 def bounds_union(
