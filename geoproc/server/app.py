@@ -17,7 +17,7 @@ from geoproc.models import VisualizationParams
 from geoproc.server.image import Image, ImageReader
 from geoproc.server.image import eval_image as _eval_image
 from geoproc.server.models import ExportRequest
-from geoproc.types import SingleOrRGBList, Number
+from geoproc.types import Number, SingleOrRGBList
 
 cache_redis = redis.Redis(host="localhost", port=6379, db=0)
 
@@ -141,6 +141,13 @@ def tile(id: str, z: int, x: int, y: int):
     vis_params = get_vis_params(id) or VisualizationParams()
 
     image = eval_image(image_json)
+
+    # Workaround: Do not render tiles of a lower zoom level than the minimum
+    # zoom level of Image, to avoid performance issue with WarpedVRT.
+    # See issue https://github.com/cogeotiff/rio-tiler/issues/348
+    if image.min_zoom and z < image.min_zoom:
+        return Response(status_code=204, headers=TILE_HEADERS)
+
     try:
         with ImageReader(image) as src:
             img = src.tile(x, y, z)
